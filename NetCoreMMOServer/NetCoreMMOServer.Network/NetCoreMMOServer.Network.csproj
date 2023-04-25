@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MemoryPack" Version="1.9.13" />
+    <PackageReference Include="System.IO.Pipelines" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetCoreMMOServer.Packet\NetCoreMMOServer.Packet.csproj" />
+    <ProjectReference Include="..\NetCoreMMOServer.Utility\NetCoreMMOServer.Utility.csproj" />
+  </ItemGroup>
+
+</Project>
