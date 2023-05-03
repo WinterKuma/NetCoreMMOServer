@@ -8,6 +8,8 @@ namespace NetCoreMMOServer.Network
     {
         public static bool TryReadPacket(ref ReadOnlySequence<byte> buffer, ref MPacket packet)
         {
+            if (buffer.Length <= 0) return false;
+
             int length = 0;
             try
             {
