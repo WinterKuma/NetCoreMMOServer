@@ -30,11 +30,14 @@ namespace NetCoreMMOServer.Packet
         public const string PacketExtensionsCodeGeneratorSource =
             @"using System;
 using MemoryPack;
+using NetCoreMMOServer.Utility;
 
 namespace NetCoreMMOServer.Packet
 {
     public static partial class PacketExtensions
     {
+        private static ConcurrentPool<PacketBufferWriter> _packetBufferWriterPool = new();
+
         public static PacketProtocol GetProtocol(this Dto dto, Type type)
         {
             if (DtoPacketProtocolDictionary.TryGetValue(type, out PacketProtocol packetProtocol))
@@ -44,19 +47,43 @@ namespace NetCoreMMOServer.Packet
             return PacketProtocol.None;
         }
 
-        public static void Serialize<T>(this T dto, ref MPacket packet) where T : Dto
+        public static ReadOnlyMemory<byte> AsMemory(this MPacket packet)
         {
-            packet.PacketProtocol = dto.GetProtocol(typeof(T));
-            packet.Dto = MemoryPackSerializer.Serialize(dto);
+            PacketBufferWriter writer = _packetBufferWriterPool.Get();
+            writer.Clear();
+            MemoryPackSerializer.Serialize(writer, packet);
+
+            ReadOnlyMemory<byte> result = writer.GetFilledBuffer();
+
+            _packetBufferWriterPool.Return(writer);
+            return result;
         }
 
-        public static MPacket Serialize<T>(this T dto) where T : Dto
+        public static void ToMPacket<T>(this T dto, ref MPacket packet) where T : Dto
         {
+            PacketBufferWriter writer = _packetBufferWriterPool.Get();
+            writer.Clear();
+            MemoryPackSerializer.Serialize(writer, dto);
+
+            packet.PacketProtocol = dto.GetProtocol(typeof(T));
+            packet.Dto = writer.GetFilledBuffer();
+
+            _packetBufferWriterPool.Return(writer);
+        }
+
+        public static MPacket ToMPacket<T>(this T dto) where T : Dto
+        {
+            PacketBufferWriter writer = _packetBufferWriterPool.Get();
+            writer.Clear();
+            MemoryPackSerializer.Serialize(writer, dto);
+
             MPacket packet = new()
             {
                 PacketProtocol = dto.GetProtocol(typeof(T)),
-                Dto = MemoryPackSerializer.Serialize(dto)
+                Dto = writer.GetFilledBuffer()
             };
+
+            _packetBufferWriterPool.Return(writer);
             return packet;
         }
 

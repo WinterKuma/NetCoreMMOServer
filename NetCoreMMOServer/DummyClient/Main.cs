@@ -6,7 +6,7 @@ namespace DummyClient
     {
         private static List<DummyClient> clients = new();
         private static bool ShouldStop = false;
-        private static readonly int ClientCount = 32;
+        private static readonly int ClientCount = 64;
 
         private static void Main(string[] args)
         {

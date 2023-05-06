@@ -53,7 +53,7 @@ namespace NetCoreMMOServer.Network
             Console.WriteLine($"[{socket.RemoteEndPoint}]: disconnected");
         }
 
-        public async Task SendAsync(byte[] buffer)
+        public async Task SendAsync(ReadOnlyMemory<byte> buffer)
         {
             if (_pipe is null)
             {

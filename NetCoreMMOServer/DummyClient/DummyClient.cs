@@ -104,11 +104,14 @@ namespace DummyClient
                 MoveDto dto = new();
                 dto.NetObjectID = _userID;
                 dto.Position = _position;
-                SendPacketMessage(MemoryPackSerializer.Serialize(dto.Serialize()));
+                //MPacket packet = new MPacket();
+                //dto.ToMPacket(ref packet);
+                //ReadOnlyMemory<byte> buffer = packet.AsMemory();
+                SendPacketMessage(dto.ToMPacket().AsMemory());
             }
         }
 
-        public async void SendPacketMessage(byte[] packet)
+        public async void SendPacketMessage(ReadOnlyMemory<byte> packet)
         {
             if (_client is null)
             {
