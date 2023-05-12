@@ -99,9 +99,10 @@ namespace NetCoreMMOServer.Network
         public void Disconnect()
         {
             // Disconnect sockets
-            _clientSocket.Shutdown(SocketShutdown.Both);
-            _clientSocket.Disconnect(true);
-            _clientSocket.Close();
+            _clientSocket.Dispose();
+            //_clientSocket.Shutdown(SocketShutdown.Both);
+            //_clientSocket.Disconnect(true);
+            //_clientSocket.Close();
 
             // Clear pipelines
             _pipe?.Input.Complete();

@@ -5,10 +5,16 @@ using System.Runtime.CompilerServices;
 
 namespace NetCoreMMOServer.Packet
 {
-    public struct PacketBufferWriter : IBufferWriter<byte>
+    public class PacketBufferWriter : IBufferWriter<byte>
     {
         private byte[] _buffer;
         private int _written;
+
+        public PacketBufferWriter()
+        {
+            _buffer = new byte[1024];
+            _written = 0;
+        }
 
         public PacketBufferWriter(byte[] buffer)
         {
