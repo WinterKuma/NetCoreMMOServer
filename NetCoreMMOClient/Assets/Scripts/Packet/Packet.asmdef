@@ -1,0 +1,17 @@
+{
+    "name": "Packet",
+    "rootNamespace": "",
+    "references": [
+        "GUID:df44e9195d4d056499ea5958bdef524d",
+        "GUID:756335c0388f7114790e504ed368ae1d"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
