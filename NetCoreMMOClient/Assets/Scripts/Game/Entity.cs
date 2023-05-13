@@ -2,76 +2,75 @@ using MemoryPack;
 using NetCoreMMOClient.Utility;
 using NetCoreMMOServer.Packet;
 using Sirenix.OdinInspector;
-using System;
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
 
 public class Entity : MonoBehaviour
 {
-    public int NetObjectID = 1000;
-    public float moveSpeed = 3.0f;
-    public bool isMine = false;
+    [field: SerializeField]
+    public int NetObjectID { get; set; } = 1000;
+    [field: SerializeField]
+    public bool IsMine { get; set; } = false;
+    [field: SerializeField]
+    private float _moveSpeed = 3.0f;
 
-    public Vector3 destinationPosition;
+    private Vector3 _destinationPosition;
 
     // Start is called before the first frame update
     void Start()
     {
-        if (isMine)
+        if (IsMine)
         {
             Camera.main.transform.parent = transform;
         }
         else
         {
-            destinationPosition = transform.position;
+            _destinationPosition = transform.position;
         }
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (isMine)
+        if (IsMine)
         {
             bool isMove = false;
+            Vector3 dir = Vector3.zero;
             if (Input.GetKey(KeyCode.LeftArrow))
             {
                 isMove = true;
-                transform.position += Vector3.left * Time.fixedDeltaTime * moveSpeed;
+                dir += Vector3.left;
             }
             if (Input.GetKey(KeyCode.RightArrow))
             {
                 isMove = true;
-                transform.position += Vector3.right * Time.fixedDeltaTime * moveSpeed;
+                dir += Vector3.right;
             }
             if (Input.GetKey(KeyCode.UpArrow))
             {
                 isMove = true;
-                transform.position += Vector3.up * Time.fixedDeltaTime * moveSpeed;
+                dir += Vector3.up;
             }
             if (Input.GetKey(KeyCode.DownArrow))
             {
                 isMove = true;
-                transform.position += Vector3.down * Time.fixedDeltaTime * moveSpeed;
+                dir += Vector3.down;
             }
             if (isMove)
             {
-                MoveDto dto = new MoveDto();
-                dto.NetObjectID = NetObjectID;
-                dto.Position = transform.position.ToSystemNumericsVector3();
-                Main.instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto.ToMPacket()));
+                MoveEntity(dir);
             }
         }
         else
         {
             //transform.position = destinationPosition;
 
-            if (Vector3.Distance(transform.position, destinationPosition) < moveSpeed * Time.fixedDeltaTime)
+            if (Vector3.Distance(transform.position, _destinationPosition) < _moveSpeed * Time.fixedDeltaTime)
             {
-                transform.position = destinationPosition;
+                transform.position = _destinationPosition;
             }
             else
             {
-                transform.position = Vector3.Lerp(transform.position, destinationPosition, moveSpeed * Time.fixedDeltaTime);
+                transform.position = Vector3.Lerp(transform.position, _destinationPosition, _moveSpeed * Time.fixedDeltaTime);
             }
         }
     }
@@ -93,7 +92,7 @@ public class Entity : MonoBehaviour
                 break;
             case MoveDto move:
                 Vector3 movePosition = new Vector3(move.Position.X, move.Position.Y, move.Position.Z);
-                if (isMine)
+                if (IsMine)
                 {
                     if (Vector3.Distance(transform.position, movePosition) > 1.0f)
                     {
@@ -103,14 +102,14 @@ public class Entity : MonoBehaviour
                 else
                 {
                     //Debug.Log($"Log:: {NetObjectID} Move");
-                    if (Vector3.Distance(transform.position, movePosition) > moveSpeed)
+                    if (Vector3.Distance(transform.position, movePosition) > _moveSpeed)
                     {
                         transform.position = movePosition;
-                        destinationPosition = movePosition;
+                        _destinationPosition = movePosition;
                     }
                     else
                     {
-                        destinationPosition = movePosition;
+                        _destinationPosition = movePosition;
                     }
                 }
                 break;
@@ -120,14 +119,14 @@ public class Entity : MonoBehaviour
     }
 
     [Button]
-    public void MoveEntity(Vector3Int dir)
+    public void MoveEntity(Vector3 dir)
     {
-        transform.position = transform.position + dir;
+        transform.position = transform.position + dir.normalized * _moveSpeed * Time.fixedDeltaTime;
 
         MoveDto dto = new MoveDto();
         dto.NetObjectID = NetObjectID;
         dto.Position = transform.position.ToSystemNumericsVector3();
-        Main.instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto.ToMPacket()));
+        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto.ToMPacket()));
     }
 
     [Button]
@@ -139,6 +138,6 @@ public class Entity : MonoBehaviour
         dto.Position = transform.position.ToSystemNumericsVector3();
         MPacket packet = new MPacket();
         dto.ToMPacket(ref packet);
-        Main.instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto));
+        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto));
     }
 }

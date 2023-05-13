@@ -1,6 +1,6 @@
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
-using Sirenix.OdinInspector;
+using NetCoreMMOServer.Utility;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -9,17 +9,15 @@ using UnityEngine;
 public class Main : MonoBehaviour
 {
     private static Main _main = null;
-    public static Main instance => _main;
+    public static Main Instance => _main;
 
     private Client _client;
     public Action<Dto> DtoReceived;
 
-    private List<MPacket> _packets = new();
-    private List<MPacket>[] _packetsBuffers = new List<MPacket>[] { new(), new() };
-    private int _currentIndex = 0;
+    private SwapChain<List<MPacket>> _packetBufferSwapChain = new();
 
     private Dictionary<int, Entity> _entityDictionary = new();
-    public GameObject entityPrefab;
+    public GameObject EntityPrefab;
 
     // Start is called before the first frame update
     void Awake()
@@ -35,17 +33,13 @@ public class Main : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        lock (_packetsBuffers[_currentIndex])
-        {
-            _packets = _packetsBuffers[_currentIndex];
-            _currentIndex = _currentIndex == 0 ? 1 : 0;
-        }
-        foreach (var packet in _packets)
+        var packetBuffer = _packetBufferSwapChain.Swap();
+        foreach (var packet in packetBuffer)
         {
             PrintPacket(packet);
             //DtoReceived?.Invoke(packet.Deserialize());
         }
-        _packets.Clear();
+        packetBuffer.Clear();
     }
 
     private void OnDisable()
@@ -55,9 +49,9 @@ public class Main : MonoBehaviour
 
     private void pushPacket(MPacket packet)
     {
-        lock (_packetsBuffers[_currentIndex])
+        lock (_packetBufferSwapChain.CurrentBuffer)
         {
-            _packetsBuffers[_currentIndex].Add(packet);
+            _packetBufferSwapChain.CurrentBuffer.Add(packet);
         }
     }
 
@@ -95,11 +89,10 @@ public class Main : MonoBehaviour
         //DtoReceived?.Invoke(dto);
     }
 
-    [Button]
     public void CreateEntity(EntityDto dto)
     {
-        Entity entity = Instantiate(entityPrefab, Vector3.zero, Quaternion.identity).GetComponent<Entity>();
-        entity.isMine = dto.IsMine;
+        Entity entity = Instantiate(EntityPrefab, Vector3.zero, Quaternion.identity).GetComponent<Entity>();
+        entity.IsMine = dto.IsMine;
         entity.NetObjectID = dto.NetObjectID;
         entity.transform.position = new Vector3(dto.Position.X, dto.Position.Y, dto.Position.Z);
         _entityDictionary.Add(entity.NetObjectID, entity);
@@ -112,7 +105,6 @@ public class Main : MonoBehaviour
     //    client.SendAsync(Encoding.UTF8.GetBytes(msg));
     //}
 
-    [Button]
     public void SendPacketMessage(byte[] packet)
     {
         _ = _client.SendAsync(packet);
