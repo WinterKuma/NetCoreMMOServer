@@ -126,7 +126,7 @@ public class Entity : MonoBehaviour
         MoveDto dto = new MoveDto();
         dto.NetObjectID = NetObjectID;
         dto.Position = transform.position.ToSystemNumericsVector3();
-        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto.ToMPacket()));
+        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
     }
 
     [Button]
@@ -136,8 +136,6 @@ public class Entity : MonoBehaviour
         dto.NetObjectID = NetObjectID;
         dto.IsSpawn = isSpawn;
         dto.Position = transform.position.ToSystemNumericsVector3();
-        MPacket packet = new MPacket();
-        dto.ToMPacket(ref packet);
-        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize(dto));
+        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
     }
 }

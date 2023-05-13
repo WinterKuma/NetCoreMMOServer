@@ -11,6 +11,33 @@ namespace NetCoreMMOServer.Packet
         public ReadOnlyMemory<byte> Dto { get; set; }
     }
 
+    [MemoryPackable]
+    [MemoryPackUnion(0, typeof(EntityDto))]
+    [MemoryPackUnion(1, typeof(MoveDto))]
+    public partial interface IMPacket
+    {
+        //[MemoryPackOnDeserializing]
+        //static void ReadMPacket(ref MemoryPackReader reader, ref IMPacket? value)
+        //{
+        //    if (!reader.TryReadUnionHeader(out var tag))
+        //    {
+        //        value = default;
+
+        //        return;
+        //    }
+
+        //    switch(tag)
+        //    {
+        //        case 0:
+        //            value = new EntityDto();
+        //            break;
+        //        case 1:
+        //            value = new MoveDto();
+        //            break;
+        //    }
+        //}
+    }
+
     public partial class Dto
     {
     }
@@ -23,7 +50,7 @@ namespace NetCoreMMOServer.Packet
 
     [Packetable]
     [MemoryPackable]
-    public partial class EntityDto : NetObject
+    public partial class EntityDto : NetObject, IMPacket
     {
         public bool IsMine { get; set; } = false;
         public bool IsSpawn { get; set; } = false;
@@ -32,7 +59,7 @@ namespace NetCoreMMOServer.Packet
 
     [Packetable]
     [MemoryPackable]
-    public partial class MoveDto : NetObject
+    public partial class MoveDto : NetObject, IMPacket
     {
         public Vector3 Position { get; set; }
     }

@@ -16,7 +16,7 @@ namespace NetCoreMMOServer.Network
         private IDuplexPipe? _pipe;
 
         public event AsyncAction<Socket>? Connected;
-        public event Action<MPacket>? Received;
+        public event Action<IMPacket>? Received;
 
         public Client()
         {
@@ -80,9 +80,8 @@ namespace NetCoreMMOServer.Network
 
                 ReadResult result = await _pipe.Input.ReadAsync();
                 ReadOnlySequence<byte> buffer = result.Buffer;
-                MPacket packet = new();
 
-                while (BufferResolver.TryReadPacket(ref buffer, ref packet))
+                while (BufferResolver.TryReadPacket(ref buffer, out var packet))
                 {
                     Received?.Invoke(packet);
                 }

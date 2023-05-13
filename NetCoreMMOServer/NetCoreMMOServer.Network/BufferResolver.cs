@@ -27,5 +27,31 @@ namespace NetCoreMMOServer.Network
             buffer = buffer.Slice(length);
             return true;
         }
+
+        public static bool TryReadPacket(ref ReadOnlySequence<byte> buffer, out IMPacket? packet)
+        {
+            packet = null;
+
+            if (buffer.Length <= 0) return false;
+
+
+            int length = 0;
+            try
+            {
+                length = MemoryPackSerializer.Deserialize(buffer, ref packet);
+            }
+            catch
+            {
+                //Console.WriteLine($"Error:: MemoryPackSerializer.Deserialize() throw {ex}");
+                return false;
+            }
+            if (length == 0)
+            {
+                return false;
+            }
+
+            buffer = buffer.Slice(length);
+            return true;
+        }
     }
 }

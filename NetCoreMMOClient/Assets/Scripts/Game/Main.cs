@@ -14,7 +14,7 @@ public class Main : MonoBehaviour
     private Client _client;
     public Action<Dto> DtoReceived;
 
-    private SwapChain<List<MPacket>> _packetBufferSwapChain = new();
+    private SwapChain<List<IMPacket>> _packetBufferSwapChain = new();
 
     private Dictionary<int, Entity> _entityDictionary = new();
     public GameObject EntityPrefab;
@@ -47,7 +47,7 @@ public class Main : MonoBehaviour
         _client.Disconnect();
     }
 
-    private void pushPacket(MPacket packet)
+    private void pushPacket(IMPacket packet)
     {
         lock (_packetBufferSwapChain.CurrentBuffer)
         {
@@ -55,12 +55,9 @@ public class Main : MonoBehaviour
         }
     }
 
-    public void PrintPacket(MPacket packet)
+    public void PrintPacket(IMPacket packet)
     {
-        Debug.Log(packet.PacketProtocol.ToString());
-
-        Dto dto = packet.Deserialize();
-        switch (dto)
+        switch (packet)
         {
             case EntityDto entity:
                 if (entity.IsSpawn)

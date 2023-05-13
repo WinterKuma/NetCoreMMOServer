@@ -37,11 +37,10 @@ namespace DummyClient
             _client.OnConnectAsync(new IPEndPoint(IPAddress.Loopback, 8080));
         }
 
-        private void ProcessPacket(MPacket packet)
+        private void ProcessPacket(IMPacket packet)
         {
             //2번
-            var dto = packet.Deserialize();
-            switch (dto)
+            switch (packet)
             {
                 case null:
                     break;
@@ -107,7 +106,7 @@ namespace DummyClient
                 //MPacket packet = new MPacket();
                 //dto.ToMPacket(ref packet);
                 //ReadOnlyMemory<byte> buffer = packet.AsMemory();
-                SendPacketMessage(dto.ToMPacket().AsMemory());
+                SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
             }
         }
 

@@ -23,8 +23,8 @@ namespace NetCoreMMOServer
         private ConcurrentPool<UserInfo> _userInfoPool;
         private Dictionary<int, UserInfo> _userIdDictionary;
 
-        private SwapChain<Queue<MPacket>> _packetQueueSwapChain;
-        private Queue<MPacket> _broadcastPacketQueue;
+        private SwapChain<Queue<IMPacket>> _packetQueueSwapChain;
+        private Queue<IMPacket> _broadcastPacketQueue;
 
         private PacketBufferWriter _packetBufferWriter;
 
@@ -40,7 +40,7 @@ namespace NetCoreMMOServer
             _userIdDictionary = new Dictionary<int, UserInfo>();
 
             _packetQueueSwapChain = new();
-            _broadcastPacketQueue = new Queue<MPacket>();
+            _broadcastPacketQueue = new();
 
             _packetBufferWriter = new PacketBufferWriter(new byte[1 << 16]);
         }
@@ -67,10 +67,10 @@ namespace NetCoreMMOServer
                 ProcessConnectUser();
 
                 // Update Packet
-                var pakcetQueue = _packetQueueSwapChain.Swap();
-                while (pakcetQueue.Count > 0)
+                var packetQueue = _packetQueueSwapChain.Swap();
+                while (packetQueue.Count > 0)
                 {
-                    if (pakcetQueue.TryDequeue(out var packet))
+                    if (packetQueue.TryDequeue(out var packet))
                     {
                         ProcessPacket(packet);
                     }
@@ -166,9 +166,10 @@ namespace NetCoreMMOServer
                     ReadResult result = await user.Reader.ReadAsync().ConfigureAwait(false);
                     ReadOnlySequence<byte> buffer = result.Buffer;
 
-                    MPacket packet = new();
-                    while (BufferResolver.TryReadPacket(ref buffer, ref packet))
+                    while (BufferResolver.TryReadPacket(ref buffer, out var packet))
                     {
+                        if (packet == null) continue;
+
                         lock (_packetQueueSwapChain.CurrentBuffer)
                         {
                             _packetQueueSwapChain.CurrentBuffer.Enqueue(packet);
@@ -191,10 +192,9 @@ namespace NetCoreMMOServer
             }
         }
 
-        private void ProcessPacket(in MPacket packet)
+        private void ProcessPacket(in IMPacket packet)
         {
-            var dto = packet.Deserialize();
-            switch (dto)
+            switch (packet)
             {
                 case null:
                     break;
@@ -209,7 +209,7 @@ namespace NetCoreMMOServer
                     if (_userIdDictionary.ContainsKey(move.NetObjectID))
                     {
                         _userIdDictionary[move.NetObjectID].Position = move.Position;
-                        _broadcastPacketQueue.Enqueue(move.ToMPacket());
+                        _broadcastPacketQueue.Enqueue(move);
                     }
                     else
                     {
@@ -312,12 +312,9 @@ namespace NetCoreMMOServer
             entityDto.IsMine = true;
             entityDto.IsSpawn = true;
             entityDto.Position = new Vector3(0, 0, 0);
-            MPacket mPacket = new MPacket();
-            entityDto.ToMPacket(ref mPacket);
-            SendAsync(client, MemoryPackSerializer.Serialize(mPacket));
+            _ = SendAsync(client, MemoryPackSerializer.Serialize<IMPacket>(entityDto));
             entityDto.IsMine = false;
-            entityDto.ToMPacket(ref mPacket);
-            SendAnother(client, MemoryPackSerializer.Serialize(mPacket));
+            SendAnother(client, MemoryPackSerializer.Serialize<IMPacket>(entityDto));
             foreach (var user in _userIdDictionary.Values)
             {
                 if (user.Id != userId)
@@ -326,8 +323,7 @@ namespace NetCoreMMOServer
                     entityDto.IsMine = false;
                     entityDto.IsSpawn = true;
                     entityDto.Position = user.Position;
-                    entityDto.ToMPacket(ref mPacket);
-                    SendAsync(client, MemoryPackSerializer.Serialize(mPacket));
+                    _ = SendAsync(client, MemoryPackSerializer.Serialize<IMPacket>(entityDto));
                 }
             }
         }
@@ -341,9 +337,7 @@ namespace NetCoreMMOServer
                 EntityDto entityDto = new EntityDto();
                 entityDto.NetObjectID = userId;
                 entityDto.IsSpawn = false;
-                MPacket mPacket = new MPacket();
-                entityDto.ToMPacket(ref mPacket);
-                SendBroadcast(MemoryPackSerializer.Serialize(mPacket));
+                SendBroadcast(MemoryPackSerializer.Serialize<IMPacket>(entityDto));
             }
             catch (Exception ex)
             {
