@@ -12,8 +12,8 @@ namespace NetCoreMMOServer.Packet
     }
 
     [MemoryPackable]
-    [MemoryPackUnion(0, typeof(EntityDto))]
-    [MemoryPackUnion(1, typeof(MoveDto))]
+    [MemoryPackUnion(1, typeof(EntityDto))]
+    [MemoryPackUnion(2, typeof(MoveDto))]
     public partial interface IMPacket
     {
         //[MemoryPackOnDeserializing]
@@ -26,13 +26,13 @@ namespace NetCoreMMOServer.Packet
         //        return;
         //    }
 
-        //    switch(tag)
+        //    switch (tag)
         //    {
         //        case 0:
-        //            value = new EntityDto();
+        //            value = PacketDtoPoolProvider.GetDtoPool<EntityDto>().GetDto();
         //            break;
         //        case 1:
-        //            value = new MoveDto();
+        //            value = PacketDtoPoolProvider.GetDtoPool<MoveDto>().GetDto();
         //            break;
         //    }
         //}

@@ -66,6 +66,7 @@ namespace DummyClient
                 default:
                     break;
             }
+            PacketDtoPoolProvider.ReturnDto(packet);
         }
 
         public void Update(float dt)

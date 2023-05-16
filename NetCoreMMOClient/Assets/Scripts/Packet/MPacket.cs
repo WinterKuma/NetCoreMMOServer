@@ -13,8 +13,8 @@ namespace NetCoreMMOServer.Packet
     }
 
     [MemoryPackable]
-    [MemoryPackUnion(0, typeof(EntityDto))]
-    [MemoryPackUnion(1, typeof(MoveDto))]
+    [MemoryPackUnion(1, typeof(EntityDto))]
+    [MemoryPackUnion(2, typeof(MoveDto))]
     public partial interface IMPacket
     {
         //[MemoryPackOnDeserializing]

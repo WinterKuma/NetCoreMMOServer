@@ -8,17 +8,20 @@ namespace NetCoreMMOServer.Packet
     {
         private byte[] _buffer;
         private int _written;
+        private int _consumed;
 
         public PacketBufferWriter()
         {
             _buffer = new byte[1024];
             _written = 0;
+            _consumed = 0;
         }
 
         public PacketBufferWriter(byte[] buffer)
         {
             _buffer = buffer;
             _written = 0;
+            _consumed = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -35,6 +38,7 @@ namespace NetCoreMMOServer.Packet
                 _buffer[i] = 0;
             }
             _written = 0;
+            _consumed = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -66,9 +70,10 @@ namespace NetCoreMMOServer.Packet
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlyMemory<byte> GetFilledMemory(int sizeHint = 0)
         {
-            ReadOnlyMemory<byte> result = _buffer.AsMemory(0, _written);
+            ReadOnlyMemory<byte> result = _buffer.AsMemory(_consumed, _written - _consumed);
             if (result.Length >= sizeHint)
             {
+                _consumed = _written;
                 return result;
             }
 
