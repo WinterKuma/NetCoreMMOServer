@@ -91,7 +91,7 @@ namespace NetCoreMMOServer
                             MemoryPackSerializer.Serialize(_packetBufferWriter, packet);
                         }
                     }
-                    SendBroadcast(_packetBufferWriter.GetFilledBuffer());
+                    SendBroadcast(_packetBufferWriter.GetFilledMemory());
                 }
 
                 //Console.WriteLine($"Log:: Loop Tick ElapsedMilliseconds : {st.ElapsedMilliseconds}");

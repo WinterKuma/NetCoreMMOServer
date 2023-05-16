@@ -23,7 +23,7 @@ namespace NetCoreMMOServer.Packet
             writer.Clear();
             MemoryPackSerializer.Serialize(writer, packet);
 
-            ReadOnlyMemory<byte> result = writer.GetFilledBuffer();
+            ReadOnlyMemory<byte> result = writer.GetFilledMemory();
 
             _packetBufferWriterPool.Return(writer);
             return result;
@@ -36,7 +36,7 @@ namespace NetCoreMMOServer.Packet
             MemoryPackSerializer.Serialize(writer, dto);
 
             packet.PacketProtocol = dto.GetProtocol(typeof(T));
-            packet.Dto = writer.GetFilledBuffer();
+            packet.Dto = writer.GetFilledMemory();
 
             _packetBufferWriterPool.Return(writer);
         }
@@ -50,7 +50,7 @@ namespace NetCoreMMOServer.Packet
             MPacket packet = new()
             {
                 PacketProtocol = dto.GetProtocol(typeof(T)),
-                Dto = writer.GetFilledBuffer()
+                Dto = writer.GetFilledMemory()
             };
 
             _packetBufferWriterPool.Return(writer);

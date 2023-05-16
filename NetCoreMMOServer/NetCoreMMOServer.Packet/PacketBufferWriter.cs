@@ -64,9 +64,9 @@ namespace NetCoreMMOServer.Packet
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlyMemory<byte> GetFilledBuffer(int sizeHint = 0)
+        public ReadOnlyMemory<byte> GetFilledMemory(int sizeHint = 0)
         {
-            ReadOnlyMemory<byte> result = _buffer.AsMemory(0, _written).ToArray();
+            ReadOnlyMemory<byte> result = _buffer.AsMemory(0, _written);
             if (result.Length >= sizeHint)
             {
                 return result;
