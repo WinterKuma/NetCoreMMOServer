@@ -80,7 +80,7 @@ namespace NetCoreMMOServer
                     if (packetQueue.TryDequeue(out var packet))
                     {
                         ProcessPacket(packet);
-                        PacketDtoPoolProvider.ReturnDto(packet);
+                        PacketPool.ReturnPacket(packet);
                     }
                 }
 

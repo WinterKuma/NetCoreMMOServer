@@ -1,60 +1,39 @@
 ﻿using NetCoreMMOServer.Utility;
+using System.Runtime.CompilerServices;
 
 namespace NetCoreMMOServer.Packet
 {
-    public static class PacketDtoPoolProvider
+    public static class PacketPool
     {
         private static class Cache<T> where T : IMPacket, new()
         {
-            public static PacketDtoPool<T> dtoPool = new();
+            public static ConcurrentPool<T> _pakcetPool = new();
         }
 
-        public static PacketDtoPool<T> GetDtoPool<T>() where T : IMPacket, new()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IMPacket Get<T>() where T : IMPacket, new()
         {
-            return Cache<T>.dtoPool;
+            return Cache<T>._pakcetPool.Get();
         }
 
-        public static IMPacket GetDto<T>() where T : IMPacket, new()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Return<T>(T packet) where T : IMPacket, new()
         {
-            return Cache<T>.dtoPool.GetDto();
+            Cache<T>._pakcetPool.Return(packet);
         }
 
-        public static void ReturnDto<T>(T packet) where T : IMPacket, new()
-        {
-            Cache<T>.dtoPool.ReturnDto(packet);
-        }
-
-        public static void ReturnDto(IMPacket packet)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ReturnPacket(IMPacket packet)
         {
             switch (packet)
             {
                 case EntityDto entityDto:
-                    ReturnDto(entityDto);
+                    Return(entityDto);
                     break;
                 case MoveDto moveDto:
-                    ReturnDto(moveDto);
+                    Return(moveDto);
                     break;
             }
-        }
-    }
-
-    public class PacketDtoPool<T> where T : IMPacket, new()
-    {
-        private readonly ConcurrentPool<T> dtoPool = new();
-
-        public ConcurrentPool<T> GetDtoPool()
-        {
-            return dtoPool;
-        }
-
-        public IMPacket GetDto()
-        {
-            return dtoPool.Get();
-        }
-
-        public void ReturnDto(T packet)
-        {
-            dtoPool.Return(packet);
         }
     }
 }

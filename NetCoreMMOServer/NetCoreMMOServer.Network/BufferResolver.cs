@@ -49,10 +49,10 @@ namespace NetCoreMMOServer.Network
                 switch (tag)
                 {
                     case 1:
-                        packet = PacketDtoPoolProvider.GetDto<EntityDto>();
+                        packet = PacketPool.Get<EntityDto>();
                         break;
                     case 2:
-                        packet = PacketDtoPoolProvider.GetDto<MoveDto>();
+                        packet = PacketPool.Get<MoveDto>();
                         break;
                     default:
                         return false;
