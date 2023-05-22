@@ -7,19 +7,19 @@ namespace NetCoreMMOServer.Packet
     {
         private static class Cache<T> where T : IMPacket, new()
         {
-            public static ConcurrentPool<T> _pakcetPool = new();
+            public static ConcurrentPool<T> _packetPool = new();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IMPacket Get<T>() where T : IMPacket, new()
         {
-            return Cache<T>._pakcetPool.Get();
+            return Cache<T>._packetPool.Get();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Return<T>(T packet) where T : IMPacket, new()
         {
-            Cache<T>._pakcetPool.Return(packet);
+            Cache<T>._packetPool.Return(packet);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
