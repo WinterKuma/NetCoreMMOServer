@@ -12,11 +12,11 @@ namespace NetCoreMMOServer.Network
         private EntityDataTable _initDataTablePacket;
         private EntityDataTable _updateDataTablePacket;
         private EntityDataTable _disposeDataTablePacket;
-        public readonly List<ISyncData> _syncDatas;
+        private List<ISyncData> _syncDatas;
 
         // Base Param
-        public readonly SyncData<bool> IsActive = new(true);
-        public readonly SyncData<Vector3> Position = new(new Vector3(0.0f, 0.0f, 0.0f));
+        public SyncData<bool> IsActive = new(true);
+        public SyncData<Vector3> Position = new(new Vector3(0.0f, 0.0f, 0.0f));
 
         public EntityDataBase()
         {
@@ -111,7 +111,7 @@ namespace NetCoreMMOServer.Network
                     Console.WriteLine("Error:: Not Found key");
                     continue;
                 }
-                _syncDatas[kvp.Key] = kvp.Value;
+                _syncDatas[kvp.Key].SetValue(kvp.Value);
             }
         }
     }

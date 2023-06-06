@@ -68,7 +68,10 @@ public class Entity : MonoBehaviour
         else
         {
             //transform.position = destinationPosition;
-
+            if(EntityData.Position.IsDirty)
+            {
+                _destinationPosition = EntityData.Position.Value;
+            }
             if (Vector3.Distance(transform.position, _destinationPosition) < _moveSpeed * Time.fixedDeltaTime)
             {
                 transform.position = _destinationPosition;
@@ -78,6 +81,9 @@ public class Entity : MonoBehaviour
                 transform.position = Vector3.Lerp(transform.position, _destinationPosition, _moveSpeed * Time.fixedDeltaTime);
             }
         }
+
+        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(EntityData.UpdateDataTablePacket()));
+        EntityData.ClearDataTablePacket();
     }
 
     public void OnDestroy()

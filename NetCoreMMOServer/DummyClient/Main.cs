@@ -7,7 +7,7 @@ namespace DummyClient
     {
         private static List<DummyClient> clients = new();
         private static bool ShouldStop = false;
-        private static readonly int ClientCount = 1;
+        private static readonly int ClientCount = 64;
 
         private static string ip = "127.0.0.1";
         private static int port = 8080;

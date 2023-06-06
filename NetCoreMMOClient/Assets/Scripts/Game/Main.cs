@@ -1,3 +1,4 @@
+using MemoryPack;
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Utility;
@@ -47,6 +48,12 @@ public class Main : MonoBehaviour
             //DtoReceived?.Invoke(packet.Deserialize());
         }
         packetBuffer.Clear();
+
+        //if (_linkedEntity != null)
+        //{
+        //    SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.EntityData.UpdateDataTablePacket()));
+        //    _linkedEntity.EntityData.ClearDataTablePacket();
+        //}
     }
 
     private void OnDisable()

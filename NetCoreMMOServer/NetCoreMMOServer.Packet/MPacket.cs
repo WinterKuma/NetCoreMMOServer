@@ -1,4 +1,5 @@
 ﻿using MemoryPack;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace NetCoreMMOServer.Packet
@@ -95,6 +96,14 @@ namespace NetCoreMMOServer.Packet
             get { return _dirtyFlag; }
             set { _dirtyFlag = value; }
         }
+
+        public void SetValue(ISyncData syncData)
+        {
+            if(syncData is SyncData<T> data)
+            {
+                Value = data.Value; 
+            }
+        }
     }
 
     [MemoryPackable]
@@ -115,6 +124,8 @@ namespace NetCoreMMOServer.Packet
     public partial interface ISyncData
     {
         public bool IsDirty { get; set; }
+
+        public void SetValue(ISyncData syncData);
     }
 
     public enum EntityType : byte

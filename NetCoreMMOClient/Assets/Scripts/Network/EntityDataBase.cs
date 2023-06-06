@@ -112,7 +112,7 @@ namespace NetCoreMMOServer.Network
                     Console.WriteLine("Error:: Not Found key");
                     continue;
                 }
-                _syncDatas[kvp.Key] = kvp.Value;
+                _syncDatas[kvp.Key].SetValue(kvp.Value);
             }
         }
     }

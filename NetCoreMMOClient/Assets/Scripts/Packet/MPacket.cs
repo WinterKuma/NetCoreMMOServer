@@ -97,6 +97,15 @@ namespace NetCoreMMOServer.Packet
             get { return _dirtyFlag; }
             set { _dirtyFlag = value; }
         }
+
+        public void SetValue(ISyncData syncData)
+        {
+            //Debug.Assert(syncData is SyncData<T>);
+            if(syncData is SyncData<T> data)
+            {
+                Value = data.Value;
+            }
+        }
     }
 
     [MemoryPackable]
@@ -110,13 +119,14 @@ namespace NetCoreMMOServer.Packet
     [MemoryPackUnion(7, typeof(SyncData<ulong>))]
     [MemoryPackUnion(8, typeof(SyncData<float>))]
     [MemoryPackUnion(9, typeof(SyncData<double>))]
-    [MemoryPackUnion(10, typeof(SyncData<Vector2>))]
-    [MemoryPackUnion(11, typeof(SyncData<Vector3>))]
-    [MemoryPackUnion(12, typeof(SyncData<Vector4>))]
-    [MemoryPackUnion(13, typeof(SyncData<Quaternion>))]
+    [MemoryPackUnion(10, typeof(SyncData<UnityEngine.Vector2>))]
+    [MemoryPackUnion(11, typeof(SyncData<UnityEngine.Vector3>))]
+    [MemoryPackUnion(12, typeof(SyncData<UnityEngine.Vector4>))]
+    [MemoryPackUnion(13, typeof(SyncData<UnityEngine.Quaternion>))]
     public partial interface ISyncData
     {
         public bool IsDirty { get; set; }
+        public void SetValue(ISyncData syncData);
     }
 
     public enum EntityType : byte

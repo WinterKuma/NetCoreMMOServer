@@ -243,9 +243,6 @@ namespace NetCoreMMOServer
         {
             switch (packet)
             {
-                case null:
-                    break;
-
                 case EntityDataTable entityDataTablePacket:
                     if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
                     {
