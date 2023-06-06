@@ -1,5 +1,6 @@
 using MemoryPack;
 using NetCoreMMOClient.Utility;
+using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -12,6 +13,8 @@ public class Entity : MonoBehaviour
     public bool IsMine { get; set; } = false;
     [field: SerializeField]
     private float _moveSpeed = 3.0f;
+
+    public EntityDataBase EntityData { get; set; } = null;
 
     private Vector3 _destinationPosition;
 
@@ -57,7 +60,9 @@ public class Entity : MonoBehaviour
             }
             if (isMove)
             {
-                MoveEntity(dir);
+                transform.position = transform.position + dir.normalized * _moveSpeed * Time.fixedDeltaTime;
+                EntityData.Position.Value = transform.position;
+                //MoveEntity(dir);
             }
         }
         else
@@ -118,24 +123,24 @@ public class Entity : MonoBehaviour
         }
     }
 
-    [Button]
-    public void MoveEntity(Vector3 dir)
-    {
-        transform.position = transform.position + dir.normalized * _moveSpeed * Time.fixedDeltaTime;
+    //[Button]
+    //public void MoveEntity(Vector3 dir)
+    //{
+    //    transform.position = transform.position + dir.normalized * _moveSpeed * Time.fixedDeltaTime;
 
-        MoveDto dto = new MoveDto();
-        dto.NetObjectID = NetObjectID;
-        dto.Position = transform.position.ToSystemNumericsVector3();
-        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
-    }
+    //    MoveDto dto = new MoveDto();
+    //    dto.NetObjectID = NetObjectID;
+    //    dto.Position = transform.position.ToSystemNumericsVector3();
+    //    Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
+    //}
 
-    [Button]
-    public void SpawnEntity(bool isSpawn)
-    {
-        EntityDto dto = new EntityDto();
-        dto.NetObjectID = NetObjectID;
-        dto.IsSpawn = isSpawn;
-        dto.Position = transform.position.ToSystemNumericsVector3();
-        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
-    }
+    //[Button]
+    //public void SpawnEntity(bool isSpawn)
+    //{
+    //    EntityDto dto = new EntityDto();
+    //    dto.NetObjectID = NetObjectID;
+    //    dto.IsSpawn = isSpawn;
+    //    dto.Position = transform.position.ToSystemNumericsVector3();
+    //    Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
+    //}
 }

@@ -16,8 +16,15 @@ public class Main : MonoBehaviour
 
     private SwapChain<List<IMPacket>> _packetBufferSwapChain = new();
 
-    private Dictionary<int, Entity> _entityDictionary = new();
+    private Dictionary<EntityInfo, Entity> _entityDictionary = new();
+    //private Dictionary<(EntityType entityType, uint EntityID), Entity> _entityDictionary = new();
     public GameObject EntityPrefab;
+
+    private EntityInfo _entityInfo;
+    private Entity? _linkedEntity = null;
+
+    private static string ip = "127.0.0.1";
+    private static int port = 8080;
 
     // Start is called before the first frame update
     void Awake()
@@ -27,7 +34,7 @@ public class Main : MonoBehaviour
 
         _client = new();
         _client.Received += pushPacket;
-        _client.OnConnect(new IPEndPoint(IPAddress.Loopback, 8080));
+        _client.OnConnect(new IPEndPoint(IPAddress.Parse(ip), port));
     }
 
     // Update is called once per frame
@@ -55,44 +62,81 @@ public class Main : MonoBehaviour
         }
     }
 
+    public void SetLinkEntity(EntityInfo entityInfo)
+    {
+        _entityInfo = entityInfo;
+        if (_entityDictionary.ContainsKey(entityInfo))
+        {
+            _linkedEntity = _entityDictionary[entityInfo];
+            //_userID = (int)_linkedEntity.EntityID;
+        }
+    }
+
     public void PrintPacket(IMPacket packet)
     {
         switch (packet)
         {
-            case EntityDto entity:
-                if (entity.IsSpawn)
-                {
-                    CreateEntity(entity);
-                }
-                else
-                {
-                    Destroy(_entityDictionary[entity.NetObjectID].gameObject);
-                    _entityDictionary.Remove(entity.NetObjectID);
-                }
+            case SetLinkedEntityPacket setLinkedEntityPacket:
+                SetLinkEntity(setLinkedEntityPacket.EntityInfo);
                 break;
-            case MoveDto move:
-                if (_entityDictionary.ContainsKey(move.NetObjectID))
+
+            case EntityDataTable entityDataTablePacket:
+                var entityInfo = entityDataTablePacket.EntityInfo;
+                if (!_entityDictionary.ContainsKey(entityInfo))
                 {
-                    _entityDictionary[move.NetObjectID].DtoReceived(move);
+                    _entityDictionary.Add(entityInfo, CreateEntity(entityDataTablePacket));
+                    if (_linkedEntity == null)
+                    {
+                        SetLinkEntity(_entityInfo);
+                    }
                 }
-                else
+                else if (_entityDictionary[entityInfo].EntityData.IsActive.Value == false)
                 {
-                    Console.WriteLine($"Error:: Not Found Entity[ID:{move.NetObjectID}]");
+                    if (_entityDictionary.Remove(entityInfo, out var entity))
+                    {
+                        Destroy(entity);
+                        break;
+                    }
                 }
+                _entityDictionary[entityInfo].EntityData.LoadDataTablePacket(entityDataTablePacket);
                 break;
+
+            //case EntityDto entity:
+            //    if (entity.IsSpawn)
+            //    {
+            //        CreateEntity(entity);
+            //    }
+            //    else
+            //    {
+            //        Destroy(_entityDictionary[entity.NetObjectID].gameObject);
+            //        _entityDictionary.Remove(entity.NetObjectID);
+            //    }
+            //    break;
+            //case MoveDto move:
+            //    if (_entityDictionary.ContainsKey(move.NetObjectID))
+            //    {
+            //        _entityDictionary[move.NetObjectID].DtoReceived(move);
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine($"Error:: Not Found Entity[ID:{move.NetObjectID}]");
+            //    }
+            //    break;
             default:
                 break;
         }
         //DtoReceived?.Invoke(dto);
     }
 
-    public void CreateEntity(EntityDto dto)
+    public Entity CreateEntity(EntityDataTable entityDataTable)
     {
         Entity entity = Instantiate(EntityPrefab, Vector3.zero, Quaternion.identity).GetComponent<Entity>();
-        entity.IsMine = dto.IsMine;
-        entity.NetObjectID = dto.NetObjectID;
-        entity.transform.position = new Vector3(dto.Position.X, dto.Position.Y, dto.Position.Z);
-        _entityDictionary.Add(entity.NetObjectID, entity);
+        entity.IsMine = _entityInfo.EntityID == entityDataTable.EntityInfo.EntityID;
+        entity.NetObjectID = (int)entityDataTable.EntityInfo.EntityID;
+        entity.EntityData = new EntityDataBase();
+        return entity;
+        //entity.transform.position = entityDataTable
+        //_entityDictionary.Add(entity.NetObjectID, entity);
     }
 
     //[Button]

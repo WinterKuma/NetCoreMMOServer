@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 
 namespace DummyClient
 {
@@ -6,7 +7,10 @@ namespace DummyClient
     {
         private static List<DummyClient> clients = new();
         private static bool ShouldStop = false;
-        private static readonly int ClientCount = 64;
+        private static readonly int ClientCount = 1;
+
+        private static string ip = "127.0.0.1";
+        private static int port = 8080;
 
         private static void Main(string[] args)
         {
@@ -20,7 +24,7 @@ namespace DummyClient
             // Try connect to server
             foreach (DummyClient client in clients)
             {
-                client.Connect();
+                client.Connect(new IPEndPoint(IPAddress.Parse(ip), port));
                 Console.WriteLine($"Try connect client[{client.ClientID}]...");
             }
 

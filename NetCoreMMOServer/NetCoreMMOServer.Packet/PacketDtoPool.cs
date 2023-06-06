@@ -22,6 +22,7 @@ namespace NetCoreMMOServer.Packet
             Cache<T>._packetPool.Return(packet);
         }
 
+        // TODO : Partial class & Code Generator
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReturnPacket(IMPacket packet)
         {
@@ -32,6 +33,15 @@ namespace NetCoreMMOServer.Packet
                     break;
                 case MoveDto moveDto:
                     Return(moveDto);
+                    break;
+                case EntityDataTable entityDataTable:
+                    Return(entityDataTable);
+                    break;
+                case ZoneDataTable zoneDataTable:
+                    Return(zoneDataTable);
+                    break;
+                case SetLinkedEntityPacket setLinkedEntityPacket:
+                    Return(setLinkedEntityPacket);
                     break;
             }
         }

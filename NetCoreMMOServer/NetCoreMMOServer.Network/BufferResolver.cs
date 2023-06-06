@@ -49,10 +49,13 @@ namespace NetCoreMMOServer.Network
                 switch (tag)
                 {
                     case 1:
-                        packet = PacketPool.Get<EntityDto>();
+                        packet = PacketPool.Get<EntityDataTable>();
                         break;
                     case 2:
-                        packet = PacketPool.Get<MoveDto>();
+                        packet = PacketPool.Get<ZoneDataTable>();
+                        break;
+                    case 3:
+                        packet = PacketPool.Get<SetLinkedEntityPacket>();
                         break;
                     default:
                         return false;

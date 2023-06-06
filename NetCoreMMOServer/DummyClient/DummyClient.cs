@@ -1,6 +1,7 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
+using System.Collections.Generic;
 using System.Net;
 using System.Numerics;
 
@@ -21,6 +22,11 @@ namespace DummyClient
 
         private Random _random = new Random();
 
+        private EntityInfo _entityInfo;
+        private EntityDataBase? _linkedEntity = null;
+        //private List<EntityDataBase> _entities = new();
+        private Dictionary<EntityInfo, EntityDataBase> _entityTable = new();
+
         public bool IsSpawn => _isSpawn;
         public int ClientID => _clientID;
         public int UserID => _userID;
@@ -32,9 +38,19 @@ namespace DummyClient
             this._clientID = clientID;
         }
 
-        public void Connect()
+        public void Connect(IPEndPoint serverEP)
         {
-            _client.OnConnectAsync(new IPEndPoint(IPAddress.Loopback, 8080));
+            _client.OnConnectAsync(serverEP);
+        }
+
+        public void SetLinkEntity(EntityInfo entityInfo)
+        {
+            _entityInfo = entityInfo;
+            if(_entityTable.ContainsKey(entityInfo))
+            {
+                _linkedEntity = _entityTable[entityInfo];
+                _userID = (int)_linkedEntity.EntityID;
+            }
         }
 
         private void ProcessPacket(IMPacket packet)
@@ -44,6 +60,23 @@ namespace DummyClient
             {
                 case null:
                     break;
+
+                case SetLinkedEntityPacket setLinkedEntityPacket:
+                    SetLinkEntity(setLinkedEntityPacket.EntityInfo);
+                    break;
+
+                case EntityDataTable entityDataTablePacket:
+                    if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
+                    {
+                        _entityTable.Add(entityDataTablePacket.EntityInfo, new EntityDataBase());
+                        if(_linkedEntity == null)
+                        {
+                            SetLinkEntity(_entityInfo);
+                        }
+                    }
+                    _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
+                    break;
+
                 case EntityDto entity:
                     if (!entity.IsMine)
                     {
@@ -77,6 +110,12 @@ namespace DummyClient
                 return;
             }
 
+            if(_linkedEntity == null)
+            {
+                Console.WriteLine($"Error:: Not Linked Entity (Client ID : {_clientID})");
+                return;
+            }
+
             _activeTime -= dt;
             if (_activeTime <= 0.0f)
             {
@@ -99,6 +138,7 @@ namespace DummyClient
 
             if (_isActive)
             {
+                _linkedEntity.Position.Value += _moveDir * dt * _moveSpeed;
                 //Console.WriteLine($"Log:: Moving Client!! => isActive is true (Client ID : {clientID}, User ID : {userID})");
                 _position += _moveDir * dt * _moveSpeed;
                 MoveDto dto = new();
@@ -107,7 +147,8 @@ namespace DummyClient
                 //MPacket packet = new MPacket();
                 //dto.ToMPacket(ref packet);
                 //ReadOnlyMemory<byte> buffer = packet.AsMemory();
-                SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(dto));
+                SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
+                _linkedEntity.ClearDataTablePacket();
             }
         }
 
