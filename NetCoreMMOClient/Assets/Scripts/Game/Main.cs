@@ -141,6 +141,7 @@ public class Main : MonoBehaviour
         entity.IsMine = _entityInfo.EntityID == entityDataTable.EntityInfo.EntityID;
         entity.NetObjectID = (int)entityDataTable.EntityInfo.EntityID;
         entity.EntityData = new EntityDataBase();
+        entity.EntityData.Init(entityDataTable.EntityInfo);
         return entity;
         //entity.transform.position = entityDataTable
         //_entityDictionary.Add(entity.NetObjectID, entity);

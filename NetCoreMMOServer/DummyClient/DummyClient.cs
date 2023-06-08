@@ -68,7 +68,9 @@ namespace DummyClient
                 case EntityDataTable entityDataTablePacket:
                     if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
                     {
-                        _entityTable.Add(entityDataTablePacket.EntityInfo, new EntityDataBase());
+                        var entity = new EntityDataBase();
+                        entity.Init(entityDataTablePacket.EntityInfo);
+                        _entityTable.Add(entityDataTablePacket.EntityInfo, entity);
                         if(_linkedEntity == null)
                         {
                             SetLinkEntity(_entityInfo);

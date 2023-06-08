@@ -154,8 +154,8 @@ namespace NetCoreMMOServer
 
             var client = _userPool.Get();
             client.Init(socket);
-            client.LinkEntity(new EntityDataBase());
-            _entityTable.TryAdd(client.LinkedEntity!.EntityInfo, client.LinkedEntity);
+            //client.LinkEntity(new EntityDataBase());
+            //_entityTable.TryAdd(client.LinkedEntity!.EntityInfo, client.LinkedEntity);
             RegisterConnectUser(client);
 
             try
@@ -246,7 +246,7 @@ namespace NetCoreMMOServer
                 case EntityDataTable entityDataTablePacket:
                     if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
                     {
-                        Console.WriteLine("Error:: Not Contain EntityInfo");
+                        Console.WriteLine($"Error:: Not Contain EntityInfo {entityDataTablePacket.EntityInfo.EntityID}");
                         break;
                     }
                     _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
@@ -317,6 +317,12 @@ namespace NetCoreMMOServer
                     Console.WriteLine($"Log:: Success!! => _userIdDictionary.TryAdd({user.ID}, {user})");
                 }
                 _userList.Add(user);
+                user.LinkEntity(new EntityDataBase());
+                if (!_entityTable.TryAdd(user.LinkedEntity!.EntityInfo, user.LinkedEntity))
+                {
+                    Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({user.LinkedEntity.EntityInfo}, {user.LinkedEntity})");
+                    continue;
+                }
                 _setLinkedEntityPacket.EntityInfo = user.LinkedEntity!.EntityInfo;
                 //var rpcPacket = _rpcPacketBufferWriterPool.Get();
                 MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(user.PacketBufferWriter, _setLinkedEntityPacket);
