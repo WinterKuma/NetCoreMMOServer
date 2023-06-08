@@ -97,15 +97,15 @@ public class Main : MonoBehaviour
                         SetLinkEntity(_entityInfo);
                     }
                 }
-                else if (_entityDictionary[entityInfo].EntityData.IsActive.Value == false)
+                _entityDictionary[entityInfo].EntityData.LoadDataTablePacket(entityDataTablePacket);
+                if (!_entityDictionary[entityInfo].EntityData.IsActive.Value)
                 {
                     if (_entityDictionary.Remove(entityInfo, out var entity))
                     {
-                        Destroy(entity);
+                        Destroy(entity.gameObject);
                         break;
                     }
                 }
-                _entityDictionary[entityInfo].EntityData.LoadDataTablePacket(entityDataTablePacket);
                 break;
 
             //case EntityDto entity:

@@ -64,6 +64,9 @@ public class Entity : MonoBehaviour
                 EntityData.Position.Value = transform.position;
                 //MoveEntity(dir);
             }
+
+            Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(EntityData.UpdateDataTablePacket()));
+            EntityData.ClearDataTablePacket();
         }
         else
         {
@@ -81,9 +84,6 @@ public class Entity : MonoBehaviour
                 transform.position = Vector3.Lerp(transform.position, _destinationPosition, _moveSpeed * Time.fixedDeltaTime);
             }
         }
-
-        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(EntityData.UpdateDataTablePacket()));
-        EntityData.ClearDataTablePacket();
     }
 
     public void OnDestroy()
