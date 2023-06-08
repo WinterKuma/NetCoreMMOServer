@@ -77,6 +77,13 @@ namespace DummyClient
                         }
                     }
                     _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
+                    if (!_entityTable[entityDataTablePacket.EntityInfo].IsActive.Value)
+                    {
+                        if (_entityTable.Remove(entityDataTablePacket.EntityInfo, out var entity))
+                        {
+                            break;
+                        }
+                    }
                     break;
 
                 case EntityDto entity:

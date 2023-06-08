@@ -360,7 +360,6 @@ namespace NetCoreMMOServer
                     Console.WriteLine($"Log:: Success!! => _userIdDictionary.Remove({user.ID})");
                 }
                 _userList.Remove(user);
-                _userPool.Return(user);
             }
 
             _userEventPacketBufferWriter.Clear();
@@ -370,8 +369,17 @@ namespace NetCoreMMOServer
 
                 if (user.LinkedEntity != null)
                 {
-                    _entityTable.Remove(user.LinkedEntity.EntityInfo);
+                    if(!_entityTable.Remove(user.LinkedEntity.EntityInfo))
+                    {
+                        Console.WriteLine($"Error:: Failed!! => _entityTable.Remove({user.LinkedEntity.EntityInfo.EntityID})");
+                        continue;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Log:: Success!! => _entityTable.Remove({user.LinkedEntity.EntityInfo.EntityID})");
+                    }
                 }
+                _userPool.Return(user);
                 //_zone.RemoveEntity(user.LinkedEntity);
                 //ExitUser(user.ID);
             }

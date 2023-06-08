@@ -1,5 +1,6 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Packet;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 
@@ -76,6 +77,13 @@ namespace NetCoreMMOServer.Network
         {
             _socket = socket;
             _pipe = new DuplexPipe(new NetworkStream(socket));
+
+            _currentZones.Clear();
+            _addZones.Clear();
+            _removeZones.Clear();
+            _updateEntityList.Clear();
+            _initEntityList.Clear();
+            _disposeEntityList.Clear();
         }
 
         public int ID => _id;
@@ -104,6 +112,7 @@ namespace NetCoreMMOServer.Network
 
         public void WritePacket()
         {
+            // Update EntityList
             foreach (var zone in _removeZones)
             {
                 if (_currentZones.Remove(zone))
@@ -138,6 +147,24 @@ namespace NetCoreMMOServer.Network
                 }
             }
 
+            // Update CurrentZones
+            foreach(var zone in _removeZones)
+            {
+                if (!_currentZones.Remove(zone))
+                {
+                    Debug.Assert(false, $"Error:: _currentZones.Remove({zone})");
+                }
+            }
+
+            foreach (var zone in _addZones)
+            {
+                if (_currentZones.Add(zone))
+                {
+                    Debug.Assert(false, $"Error:: _currentZones.Add({zone})");
+                }
+            }
+
+            //Write Packet
             foreach (var entity in _disposeEntityList)
             {
                 if (_updateEntityList.Remove(entity))
@@ -159,6 +186,9 @@ namespace NetCoreMMOServer.Network
                     MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_packetBufferWriter, entity.InitDataTablePacket());
                 }
             }
+
+            _disposeEntityList.Clear();
+            _initEntityList.Clear();
         }
 
         /// Zone Method
