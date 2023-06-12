@@ -110,6 +110,11 @@ namespace NetCoreMMOServer
                     SendAsync(user, user.PacketBufferWriter.GetFilledMemory());
                 }
 
+                foreach (var user in _userList)
+                {
+                    user.LinkedEntity?.ClearDataTablePacket();
+                }
+
                 // Reset And Backup Zone EntityList
                 _zone.ResetAndBackupEntityList();
 
