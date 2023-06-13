@@ -36,6 +36,15 @@ public class Entity : MonoBehaviour
     {
         if (IsMine)
         {
+            if (EntityData.Position.IsDirty)
+            {
+                if (Vector3.Distance(transform.position, EntityData.Position.Value) > _moveSpeed * 0.5f)
+                {
+                    transform.position = EntityData.Position.Value;
+                }
+                EntityData.Position.IsDirty = false;
+            }
+
             bool isMove = false;
             Vector3 dir = Vector3.zero;
             if (Input.GetKey(KeyCode.LeftArrow))
@@ -79,9 +88,14 @@ public class Entity : MonoBehaviour
             {
                 transform.position = _destinationPosition;
             }
+            else if (Vector3.Distance(transform.position, _destinationPosition) < _moveSpeed * 0.5f)
+            {
+                //transform.position = Vector3.MoveTowards(transform.position, _destinationPosition, _moveSpeed * Time.deltaTime);
+                transform.position = Vector3.Lerp(transform.position, _destinationPosition, _moveSpeed * Time.fixedDeltaTime);
+            }
             else
             {
-                transform.position = Vector3.Lerp(transform.position, _destinationPosition, _moveSpeed * Time.fixedDeltaTime);
+                transform.position = _destinationPosition;
             }
         }
     }
