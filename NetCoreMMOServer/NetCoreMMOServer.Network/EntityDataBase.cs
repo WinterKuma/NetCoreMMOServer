@@ -4,6 +4,23 @@ using System.Numerics;
 
 namespace NetCoreMMOServer.Network
 {
+    // preview
+    public partial class PlayerEntity : EntityDataBase
+    {
+        public SyncData<int> power = new(1);
+        public SyncData<int> hp = new(10);
+    }
+
+    public partial class PlayerEntity : EntityDataBase
+    {
+        public PlayerEntity()
+        {
+            _syncDatas.Add(power);
+            _syncDatas.Add(hp);
+        }
+    }
+
+
     public class EntityDataBase
     {
         private static uint s_MaxEntityID = 0;
@@ -12,7 +29,10 @@ namespace NetCoreMMOServer.Network
         private EntityDataTable _initDataTablePacket;
         private EntityDataTable _updateDataTablePacket;
         private EntityDataTable _disposeDataTablePacket;
-        private List<ISyncData> _syncDatas;
+        protected List<ISyncData> _syncDatas;
+
+        // Zone Data
+        private SyncData<Zone?> _currentZone;
 
         // Base Param
         public SyncData<bool> IsActive = new(true);
@@ -26,6 +46,8 @@ namespace NetCoreMMOServer.Network
             _updateDataTablePacket = new();
             _disposeDataTablePacket = new();
             _disposeDataTablePacket.DataTable.TryAdd(0, new SyncData<bool>(false));
+
+            _currentZone = new();
 
             _syncDatas = new(32)
             {
@@ -46,11 +68,13 @@ namespace NetCoreMMOServer.Network
             _initDataTablePacket.EntityInfo = _entityInfo;
             _updateDataTablePacket.EntityInfo = _entityInfo;
             _disposeDataTablePacket.EntityInfo = _entityInfo;
+            _currentZone.Value = null;
         }
 
         public EntityInfo EntityInfo => _entityInfo;
         public EntityType EntityType => _entityInfo.EntityType;
         public uint EntityID => _entityInfo.EntityID;
+        public SyncData<Zone?> CurrentZone => _currentZone;
 
         public EntityDataTable InitDataTablePacket()
         {
@@ -113,6 +137,21 @@ namespace NetCoreMMOServer.Network
                 }
                 _syncDatas[kvp.Key].SetValue(kvp.Value);
             }
+        }
+
+        public void MoveZone(Zone moveZone)
+        {
+            if(_currentZone.Value?.ZoneCoord == moveZone.ZoneCoord)
+            {
+                return;
+            }
+
+            if (_currentZone.Value != null)
+            {
+                _currentZone.Value.RemoveEntity(this);
+            }
+            _currentZone.Value = moveZone;
+            _currentZone.Value.AddEntity(this);
         }
     }
 }

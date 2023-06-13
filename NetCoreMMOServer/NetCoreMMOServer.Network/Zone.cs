@@ -1,16 +1,12 @@
-﻿using MemoryPack;
-using NetCoreMMOServer.Packet;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NetCoreMMOServer.Packet;
+using NetCoreMMOServer.Utility;
 
 namespace NetCoreMMOServer.Network
 {
     public class Zone
     {
-        private ushort _zoneID;
+        private int _zoneID;
+        private Vector3Int _zoneCoord;
         private ZoneDataTable _zonePacket = new();
 
         private PacketBufferWriter _removeZoneDataBufferWriter = new(new byte[2048]);
@@ -22,58 +18,21 @@ namespace NetCoreMMOServer.Network
         private List<EntityDataBase> _addEntities = new();
         private List<EntityDataBase> _removeEntities = new();
 
+        public int ZoneID => _zoneID;
+        public Vector3Int ZoneCoord => _zoneCoord;
         public List<EntityDataBase> OldEntities => _oldEntities;
         public List<EntityDataBase> CurrentEntities => _currentEntities;
         public List<EntityDataBase> AddEntities => _addEntities;
         public List<EntityDataBase> RemoveEntities => _removeEntities;
 
-        public void Init(ushort zoneID)
+        public void Init(Vector3Int zoneCoord)
         {
-            _zoneID = zoneID;
-            _zonePacket.ZoneInfo = (ZoneType.Remove, _zoneID);
+            _zoneID = (zoneCoord.X * 10000 + zoneCoord.Y * 100 + zoneCoord.Z);
+            _zoneCoord = zoneCoord;
+            //_zonePacket.ZoneInfo = (ZoneType.Remove, _zoneID);
             _removeZoneDataBufferWriter.Clear();
             _currentEntities.Clear();
             //write _removeZoneDataBufferWriter
-        }
-
-        /// <summary>
-        /// Server Write Buffer and Send
-        /// </summary>
-        public void WriteBuffer()
-        {
-            // _addZoneDataBufferWriter
-            _zonePacket.ZoneInfo = (ZoneType.Add, _zoneID);
-            _zonePacket.EntityDataTableList.Clear();
-            foreach (EntityDataBase entity in _currentEntities)
-            {
-                var dataTablePacket = entity.InitDataTablePacket();
-                _zonePacket.EntityDataTableList.Add(dataTablePacket);
-            }
-            MemoryPackSerializer.Serialize(_addZoneDataBufferWriter, _zonePacket);
-
-            // _updateZoneDataBufferWriter
-            _zonePacket.ZoneInfo = (ZoneType.Update, _zoneID);
-            _zonePacket.EntityDataTableList.Clear();
-            foreach (EntityDataBase entity in _currentEntities)
-            {
-                var dataTablePacket = entity.UpdateDataTablePacket();
-                _zonePacket.EntityDataTableList.Add(dataTablePacket);
-            }
-            MemoryPackSerializer.Serialize(_updateZoneDataBufferWriter, _zonePacket);
-        }
-
-        /// <summary>
-        /// Client Receive and ReadBuffer
-        /// </summary>
-        public void ReadBuffer(ZoneDataTable zoneData)
-        {
-            if(zoneData.ZoneInfo.zoneID != _zoneID)
-            {
-                Console.WriteLine("Error:: Not Equals ZoneID");
-                return;
-            }
-
-
         }
 
         public void AddEntity(EntityDataBase entity)

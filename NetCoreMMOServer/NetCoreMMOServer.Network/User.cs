@@ -112,6 +112,21 @@ namespace NetCoreMMOServer.Network
 
         public void WritePacket()
         {
+            _addZones.Clear();
+            _removeZones.Clear();
+            if(_linkedEntity?.CurrentZone.IsDirty ?? false)
+            {
+                foreach(var zone in _currentZones)
+                {
+                    if(_linkedEntity.CurrentZone.Value != zone)
+                    {
+                        RemoveZone(zone);
+                    }
+                }
+                AddZone(_linkedEntity.CurrentZone.Value!);
+                _linkedEntity.CurrentZone.IsDirty = false;
+            }
+
             // Update EntityList
             foreach (var zone in _removeZones)
             {
@@ -148,21 +163,21 @@ namespace NetCoreMMOServer.Network
             }
 
             // Update CurrentZones
-            foreach(var zone in _removeZones)
-            {
-                if (!_currentZones.Remove(zone))
-                {
-                    Debug.Assert(false, $"Error:: _currentZones.Remove({zone})");
-                }
-            }
+            //foreach(var zone in _removeZones)
+            //{
+            //    if (!_currentZones.Remove(zone))
+            //    {
+            //        Debug.Assert(false, $"Error:: _currentZones.Remove({zone})");
+            //    }
+            //}
 
-            foreach (var zone in _addZones)
-            {
-                if (_currentZones.Add(zone))
-                {
-                    Debug.Assert(false, $"Error:: _currentZones.Add({zone})");
-                }
-            }
+            //foreach (var zone in _addZones)
+            //{
+            //    if (_currentZones.Add(zone))
+            //    {
+            //        Debug.Assert(false, $"Error:: _currentZones.Add({zone})");
+            //    }
+            //}
 
             //Write Packet
             foreach (var entity in _disposeEntityList)
@@ -201,10 +216,10 @@ namespace NetCoreMMOServer.Network
 
             _addZones.Add(zone);
 
-            if (_linkedEntity != null)
-            {
-                zone.AddEntity(_linkedEntity);
-            }
+            //if (_linkedEntity != null)
+            //{
+            //    zone.AddEntity(_linkedEntity);
+            //}
         }
 
         public void RemoveZone(Zone zone)
@@ -214,12 +229,12 @@ namespace NetCoreMMOServer.Network
                 return;
             }
 
-            _removeZones.Remove(zone);
+            _removeZones.Add(zone);
 
-            if (_linkedEntity != null)
-            {
-                zone.RemoveEntity(_linkedEntity);
-            }
+            //if (_linkedEntity != null)
+            //{
+            //    zone.RemoveEntity(_linkedEntity);
+            //}
         }
 
         /// Entity Method

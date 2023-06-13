@@ -31,6 +31,7 @@ namespace NetCoreMMOServer
         private ConcurrentPool<PacketBufferWriter> _rpcPacketBufferWriterPool;
 
         private Zone _zone;
+        private Zone[,] _zones;
         private Dictionary<EntityInfo, EntityDataBase> _entityTable;
         //private ConcurrentPool<EntityDataBase> _entityDataBasePool;
         //Packet Instance
@@ -55,6 +56,15 @@ namespace NetCoreMMOServer
             _userEventPacketBufferWriter = new(new byte[0xffffff]);
 
             _zone = new Zone();
+            _zones = new Zone[3, 3];
+            for(int x = 0; x < 3; ++x)
+            {
+                for(int y = 0; y < 3; ++y)
+                {
+                    _zones[x, y] = new Zone();
+                    _zones[x, y].Init(new Vector3Int(x, y, 0));
+                }
+            }
             _entityTable = new();
 
             _entityDto = new EntityDto();
@@ -102,6 +112,11 @@ namespace NetCoreMMOServer
                 ProcessDisconnectUser();
 
                 // Update Zone (with. Entity)
+                foreach(var entity in _entityTable.Values)
+                {
+                    SetZone(entity);
+                }
+
 
                 // Update User & Send Packet
                 foreach (var user in _userList)
@@ -116,7 +131,11 @@ namespace NetCoreMMOServer
                 }
 
                 // Reset And Backup Zone EntityList
-                _zone.ResetAndBackupEntityList();
+                foreach(var zone in _zones)
+                {
+                    zone.ResetAndBackupEntityList();
+                }
+                //_zone.ResetAndBackupEntityList();
 
                 // Send Packet
 
@@ -337,7 +356,7 @@ namespace NetCoreMMOServer
             _userEventPacketBufferWriter.Clear();
             foreach (var user in connectUserList)
             {
-                user.AddZone(_zone);
+                //user.AddZone(_zone);
                 //_zone.AddEntity(user.LinkedEntity);
                 //EnterUser(user, user.ID);
             }
@@ -370,7 +389,7 @@ namespace NetCoreMMOServer
             _userEventPacketBufferWriter.Clear();
             foreach (var user in disconnectUserList)
             {
-                user.RemoveZone(_zone);
+                //user.RemoveZone(_zone);
 
                 if (user.LinkedEntity != null)
                 {
@@ -385,10 +404,30 @@ namespace NetCoreMMOServer
                     }
                 }
                 _userPool.Return(user);
+                user.LinkedEntity?.CurrentZone.Value?.RemoveEntity(user.LinkedEntity);
                 //_zone.RemoveEntity(user.LinkedEntity);
                 //ExitUser(user.ID);
             }
             disconnectUserList.Clear();
+        }
+
+        private void SetZone(EntityDataBase entity)
+        {
+            Vector3 pos = entity.Position.Value;
+            if (pos.X > 15.0f ||
+                pos.Y > 15.0f ||
+                pos.X < -15.0f ||
+                pos.Y < -15.0f)
+            {
+                entity.Position.Value = Vector3.Zero;
+                entity.Position.IsDirty = true;
+                entity.MoveZone(_zones[1, 1]);
+                return;
+            }
+
+            int x = (int)((pos.X + 15.0f) * 0.1f);
+            int y = (int)((pos.Y + 15.0f) * 0.1f);
+            entity.MoveZone(_zones[x, y]);
         }
 
         private void EnterUser(User client, int userId)
