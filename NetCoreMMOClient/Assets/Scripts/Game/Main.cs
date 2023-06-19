@@ -13,12 +13,10 @@ public class Main : MonoBehaviour
     public static Main Instance => _main;
 
     private Client _client;
-    public Action<Dto> DtoReceived;
 
     private SwapChain<List<IMPacket>> _packetBufferSwapChain = new();
 
     private Dictionary<EntityInfo, Entity> _entityDictionary = new();
-    //private Dictionary<(EntityType entityType, uint EntityID), Entity> _entityDictionary = new();
     public GameObject EntityPrefab;
 
     private EntityInfo _entityInfo;
@@ -30,7 +28,6 @@ public class Main : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
-        //PacketReceived += PrintPacket;
         _main = this;
 
         _client = new();
@@ -45,7 +42,6 @@ public class Main : MonoBehaviour
         foreach (var packet in packetBuffer)
         {
             PrintPacket(packet);
-            //DtoReceived?.Invoke(packet.Deserialize());
         }
         packetBuffer.Clear();
 
@@ -75,7 +71,6 @@ public class Main : MonoBehaviour
         if (_entityDictionary.ContainsKey(entityInfo))
         {
             _linkedEntity = _entityDictionary[entityInfo];
-            //_userID = (int)_linkedEntity.EntityID;
         }
     }
 
@@ -108,31 +103,9 @@ public class Main : MonoBehaviour
                 }
                 break;
 
-            //case EntityDto entity:
-            //    if (entity.IsSpawn)
-            //    {
-            //        CreateEntity(entity);
-            //    }
-            //    else
-            //    {
-            //        Destroy(_entityDictionary[entity.NetObjectID].gameObject);
-            //        _entityDictionary.Remove(entity.NetObjectID);
-            //    }
-            //    break;
-            //case MoveDto move:
-            //    if (_entityDictionary.ContainsKey(move.NetObjectID))
-            //    {
-            //        _entityDictionary[move.NetObjectID].DtoReceived(move);
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine($"Error:: Not Found Entity[ID:{move.NetObjectID}]");
-            //    }
-            //    break;
             default:
                 break;
         }
-        //DtoReceived?.Invoke(dto);
     }
 
     public Entity CreateEntity(EntityDataTable entityDataTable)
@@ -143,16 +116,7 @@ public class Main : MonoBehaviour
         entity.EntityData = new EntityDataBase();
         entity.EntityData.Init(entityDataTable.EntityInfo);
         return entity;
-        //entity.transform.position = entityDataTable
-        //_entityDictionary.Add(entity.NetObjectID, entity);
     }
-
-    //[Button]
-    //public void SendPacketMessage(string msg)
-    //{
-    //    msg += '\0';
-    //    client.SendAsync(Encoding.UTF8.GetBytes(msg));
-    //}
 
     public void SendPacketMessage(byte[] packet)
     {

@@ -6,7 +6,7 @@ namespace NetCoreMMOServer.Packet
 {
     public static partial class PacketExtensions
     {
-        private static ConcurrentPool<PacketBufferWriter> _packetBufferWriterPool = new();
+        /*private static ConcurrentPool<PacketBufferWriter> _packetBufferWriterPool = new();
 
         public static PacketProtocol GetProtocol(this Dto dto, Type type)
         {
@@ -70,6 +70,6 @@ namespace NetCoreMMOServer.Packet
         public static Dto? Deserialize(this MPacket packet)
         {
             return DeserializeDictionary[packet.PacketProtocol].Invoke(packet);
-        }
+        }*/
     }
 }
