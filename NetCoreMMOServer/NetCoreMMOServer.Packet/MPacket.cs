@@ -1,21 +1,14 @@
 ﻿using MemoryPack;
+using NetCoreMMOServer.Utility;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace NetCoreMMOServer.Packet
 {
     [MemoryPackable]
-    public partial struct MPacket
-    {
-        [MemoryPackAllowSerialize]
-        public PacketProtocol PacketProtocol { get; set; }
-        public ReadOnlyMemory<byte> Dto { get; set; }
-    }
-
-    [MemoryPackable]
     [MemoryPackUnion(1, typeof(EntityDataTable))]
-    [MemoryPackUnion(2, typeof(ZoneDataTable))]
-    [MemoryPackUnion(3, typeof(SetLinkedEntityPacket))]
+    [MemoryPackUnion(2, typeof(SetLinkedEntityPacket))]
     public partial interface IMPacket
     {
         //[MemoryPackOnDeserializing]
@@ -38,32 +31,6 @@ namespace NetCoreMMOServer.Packet
         //            break;
         //    }
         //}
-    }
-
-    public partial class Dto
-    {
-    }
-
-    [MemoryPackable]
-    public partial class NetObject : Dto
-    {
-        public int NetObjectID { get; set; }
-    }
-
-    [Packetable]
-    [MemoryPackable]
-    public partial class EntityDto : NetObject, IMPacket
-    {
-        public bool IsMine { get; set; } = false;
-        public bool IsSpawn { get; set; } = false;
-        public Vector3 Position { get; set; }
-    }
-
-    [Packetable]
-    [MemoryPackable]
-    public partial class MoveDto : NetObject, IMPacket
-    {
-        public Vector3 Position { get; set; }
     }
 
     [MemoryPackable]
@@ -134,7 +101,7 @@ namespace NetCoreMMOServer.Packet
         Player = 1,
     }
 
-    public struct EntityInfo
+    public struct EntityInfo : IEquatable<EntityInfo>
     {
         public EntityInfo()
         {
@@ -142,6 +109,35 @@ namespace NetCoreMMOServer.Packet
 
         public EntityType EntityType { get; set; } = EntityType.None;
         public uint EntityID { get; set; } = 0;
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            if(obj is EntityInfo info)
+            {
+                return this.EntityType == info.EntityType && this.EntityID == info.EntityID;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return EntityType.GetHashCode() ^ EntityID.GetHashCode();
+        }
+
+        public bool Equals(EntityInfo other)
+        {
+            return this.EntityType == other.EntityType && this.EntityID == other.EntityID;
+        }
+
+        public static bool operator ==(EntityInfo lhs, EntityInfo rhs)
+        {
+            return lhs.EntityType == rhs.EntityType && lhs.EntityID == rhs.EntityID;
+        }
+
+        public static bool operator !=(EntityInfo lhs, EntityInfo rhs)
+        {
+            return lhs.EntityType != rhs.EntityType || lhs.EntityID != rhs.EntityID;
+        }
     }
 
     [MemoryPackable]
@@ -151,21 +147,6 @@ namespace NetCoreMMOServer.Packet
         public bool IsCashed { get; set; } = false;
         public EntityInfo EntityInfo { get; set; } = default;
         public Dictionary<byte, ISyncData> DataTable { get; set; } = new(32);
-    }
-
-    public enum ZoneType : byte
-    {
-        None = 0,
-        Add,
-        Update,
-        Remove,
-    }
-
-    [MemoryPackable]
-    public partial class ZoneDataTable : IMPacket
-    {
-        public (ZoneType zoneType, ushort zoneID) ZoneInfo { get; set; } = (ZoneType.None, 0);
-        public List<EntityDataTable> EntityDataTableList { get; set; } = new(1024);
     }
 
     [MemoryPackable]

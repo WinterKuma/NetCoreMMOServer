@@ -24,7 +24,6 @@ namespace DummyClient
 
         private EntityInfo _entityInfo;
         private EntityDataBase? _linkedEntity = null;
-        //private List<EntityDataBase> _entities = new();
         private Dictionary<EntityInfo, EntityDataBase> _entityTable = new();
 
         public bool IsSpawn => _isSpawn;
@@ -55,7 +54,6 @@ namespace DummyClient
 
         private void ProcessPacket(IMPacket packet)
         {
-            //2번
             switch (packet)
             {
                 case null:
@@ -66,15 +64,33 @@ namespace DummyClient
                     break;
 
                 case EntityDataTable entityDataTablePacket:
-                    if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
+                    if(_linkedEntity == null)
                     {
-                        var entity = new EntityDataBase();
-                        entity.Init(entityDataTablePacket.EntityInfo);
-                        _entityTable.Add(entityDataTablePacket.EntityInfo, entity);
-                        if(_linkedEntity == null)
+                        if(_entityInfo == entityDataTablePacket.EntityInfo)
                         {
+                            var entity = new EntityDataBase();
+                            entity.Init(entityDataTablePacket.EntityInfo);
+                            _entityTable.Add(entityDataTablePacket.EntityInfo, entity);
                             SetLinkEntity(_entityInfo);
                         }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+
+                    if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
+                    {
+                        break;
+                        //var entity = new EntityDataBase();
+                        //entity.Init(entityDataTablePacket.EntityInfo);
+                        //_entityTable.Add(entityDataTablePacket.EntityInfo, entity);
+                        //if(_linkedEntity == null)
+                        //{
+                        //    // TODO :: 자기 자신만 관리하도록
+                        //    SetLinkEntity(_entityInfo);
+                        //}
                     }
                     _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
                     if (!_entityTable[entityDataTablePacket.EntityInfo].IsActive.Value)
@@ -86,25 +102,6 @@ namespace DummyClient
                     }
                     break;
 
-                case EntityDto entity:
-                    if (!entity.IsMine)
-                    {
-                        break;
-                    }
-                    if (_userID > 0 && entity.NetObjectID != _userID) break;
-                    _userID = entity.NetObjectID;
-                    _isSpawn = entity.IsSpawn;
-                    _position = entity.Position;
-                    Console.WriteLine($"ID[{entity.NetObjectID}]");
-                    break;
-                case MoveDto move:
-                    if (move.NetObjectID != _userID) break;
-                    if (Vector3.Distance(_position, move.Position) > 1.0f)
-                    {
-                        _position = move.Position;
-                    }
-                    //Console.WriteLine($"ID[{move.NetObjectID}] : Position {move?.Position}");
-                    break;
                 default:
                     break;
             }
@@ -147,15 +144,9 @@ namespace DummyClient
 
             if (_isActive)
             {
-                _linkedEntity.Position.Value += _moveDir * dt * _moveSpeed;
-                //Console.WriteLine($"Log:: Moving Client!! => isActive is true (Client ID : {clientID}, User ID : {userID})");
+                _position = _linkedEntity.Position.Value;
                 _position += _moveDir * dt * _moveSpeed;
-                MoveDto dto = new();
-                dto.NetObjectID = _userID;
-                dto.Position = _position;
-                //MPacket packet = new MPacket();
-                //dto.ToMPacket(ref packet);
-                //ReadOnlyMemory<byte> buffer = packet.AsMemory();
+                _linkedEntity.Position.Value = _position;
                 SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
                 _linkedEntity.ClearDataTablePacket();
             }

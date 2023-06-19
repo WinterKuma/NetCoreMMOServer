@@ -36,7 +36,7 @@ namespace NetCoreMMOServer.Packet
 {
     public static partial class PacketExtensions
     {
-        private static ConcurrentPool<PacketBufferWriter> _packetBufferWriterPool = new();
+        /*private static ConcurrentPool<PacketBufferWriter> _packetBufferWriterPool = new();
 
         public static PacketProtocol GetProtocol(this Dto dto, Type type)
         {
@@ -100,7 +100,7 @@ namespace NetCoreMMOServer.Packet
         public static Dto? Deserialize(this MPacket packet)
         {
             return DeserializeDictionary[packet.PacketProtocol].Invoke(packet);
-        }
+        }*/
     }
 }
 ";
@@ -111,7 +111,7 @@ using System.Collections.Generic;
 namespace NetCoreMMOServer.Packet
 {
     public static partial class PacketExtensions
-    {";
+    {/*";
 
         private const string PacketableAttributeFullName = "NetCoreMMOServer.Packet.PacketableAttribute";
         private const string DtoPacketProtocolDictionaryName = @"        private static readonly Dictionary<Type, PacketProtocol> DtoPacketProtocolDictionary = new()";
@@ -260,7 +260,7 @@ namespace NetCoreMMOServer.Packet
             sb.AppendLine(DeserializeDictionaryName);
             sb.AppendLine(@"        {");
             sb.Append("{ ").Append(PacketProtocolName).Append(".None, (packet) => null }, ");
-            sb.AppendLine(@"        };");
+            sb.AppendLine(@"        };*/");
             sb.AppendLine(@"    }");
             sb.AppendLine(@"}");
             context.AddSource("PacketExtensionsDictionary.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));

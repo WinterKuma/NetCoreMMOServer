@@ -28,17 +28,8 @@ namespace NetCoreMMOServer.Packet
         {
             switch (packet)
             {
-                case EntityDto entityDto:
-                    Return(entityDto);
-                    break;
-                case MoveDto moveDto:
-                    Return(moveDto);
-                    break;
                 case EntityDataTable entityDataTable:
                     Return(entityDataTable);
-                    break;
-                case ZoneDataTable zoneDataTable:
-                    Return(zoneDataTable);
                     break;
                 case SetLinkedEntityPacket setLinkedEntityPacket:
                     Return(setLinkedEntityPacket);

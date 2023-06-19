@@ -7,11 +7,6 @@ namespace NetCoreMMOServer.Network
     {
         private int _zoneID;
         private Vector3Int _zoneCoord;
-        private ZoneDataTable _zonePacket = new();
-
-        private PacketBufferWriter _removeZoneDataBufferWriter = new(new byte[2048]);
-        private PacketBufferWriter _addZoneDataBufferWriter = new(new byte[2048]);
-        private PacketBufferWriter _updateZoneDataBufferWriter = new(new byte[2048]);
 
         private List<EntityDataBase> _oldEntities = new();
         private List<EntityDataBase> _currentEntities = new();
@@ -29,10 +24,7 @@ namespace NetCoreMMOServer.Network
         {
             _zoneID = (zoneCoord.X * 10000 + zoneCoord.Y * 100 + zoneCoord.Z);
             _zoneCoord = zoneCoord;
-            //_zonePacket.ZoneInfo = (ZoneType.Remove, _zoneID);
-            _removeZoneDataBufferWriter.Clear();
             _currentEntities.Clear();
-            //write _removeZoneDataBufferWriter
         }
 
         public void AddEntity(EntityDataBase entity)

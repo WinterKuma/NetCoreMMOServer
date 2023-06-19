@@ -24,18 +24,6 @@ namespace NetCoreMMOServer.Network
         private List<EntityDataBase> _initEntityList;
         private List<EntityDataBase> _disposeEntityList;
 
-        //public User(Socket socket, IDuplexPipe pipe)
-        //{
-        //    _socket = socket;
-        //    _pipe = pipe;
-        //}
-
-        //public User(Socket socket)
-        //{
-        //    _socket = socket;
-        //    _pipe = new DuplexPipe(new NetworkStream(socket));
-        //}
-
         public User()
         {
             _id = ++s_MaxID;
@@ -162,23 +150,6 @@ namespace NetCoreMMOServer.Network
                 }
             }
 
-            // Update CurrentZones
-            //foreach(var zone in _removeZones)
-            //{
-            //    if (!_currentZones.Remove(zone))
-            //    {
-            //        Debug.Assert(false, $"Error:: _currentZones.Remove({zone})");
-            //    }
-            //}
-
-            //foreach (var zone in _addZones)
-            //{
-            //    if (_currentZones.Add(zone))
-            //    {
-            //        Debug.Assert(false, $"Error:: _currentZones.Add({zone})");
-            //    }
-            //}
-
             //Write Packet
             foreach (var entity in _disposeEntityList)
             {
@@ -215,11 +186,6 @@ namespace NetCoreMMOServer.Network
             }
 
             _addZones.Add(zone);
-
-            //if (_linkedEntity != null)
-            //{
-            //    zone.AddEntity(_linkedEntity);
-            //}
         }
 
         public void RemoveZone(Zone zone)
@@ -230,11 +196,6 @@ namespace NetCoreMMOServer.Network
             }
 
             _removeZones.Add(zone);
-
-            //if (_linkedEntity != null)
-            //{
-            //    zone.RemoveEntity(_linkedEntity);
-            //}
         }
 
         /// Entity Method

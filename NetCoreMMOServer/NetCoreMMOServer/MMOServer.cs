@@ -26,16 +26,13 @@ namespace NetCoreMMOServer
         private SwapChain<Queue<IMPacket>> _packetQueueSwapChain;
         private Queue<IMPacket> _broadcastPacketQueue;
 
-        private PacketBufferWriter _broadcastPacketBufferWriter;
-        private PacketBufferWriter _userEventPacketBufferWriter;
         private ConcurrentPool<PacketBufferWriter> _rpcPacketBufferWriterPool;
 
-        private Zone _zone;
         private Zone[,] _zones;
         private Dictionary<EntityInfo, EntityDataBase> _entityTable;
         //private ConcurrentPool<EntityDataBase> _entityDataBasePool;
+
         //Packet Instance
-        private EntityDto _entityDto;
         private SetLinkedEntityPacket _setLinkedEntityPacket;
 
         public MMOServer(int port)
@@ -52,10 +49,6 @@ namespace NetCoreMMOServer
             _packetQueueSwapChain = new();
             _broadcastPacketQueue = new();
 
-            _broadcastPacketBufferWriter = new(new byte[0xffffff]);
-            _userEventPacketBufferWriter = new(new byte[0xffffff]);
-
-            _zone = new Zone();
             _zones = new Zone[3, 3];
             for(int x = 0; x < 3; ++x)
             {
@@ -67,7 +60,6 @@ namespace NetCoreMMOServer
             }
             _entityTable = new();
 
-            _entityDto = new EntityDto();
             _setLinkedEntityPacket = new();
         }
 
@@ -89,6 +81,7 @@ namespace NetCoreMMOServer
                 float dt = deltaMilliseconds / 1000.0f;
                 st.Restart();
 
+                // User Writer Buffer Clear
                 foreach (var user in _userList)
                 {
                     user.ClearWriter();
@@ -135,39 +128,17 @@ namespace NetCoreMMOServer
                 {
                     zone.ResetAndBackupEntityList();
                 }
-                //_zone.ResetAndBackupEntityList();
-
-                // Send Packet
-
-                //foreach (var user in _userIDDictionary.Values)
-                //{
-                //    user.WritePacket();
-                //    SendAsync(user, user.PacketBufferWriter.GetFilledMemory());
-                //}
-
-                //if (_broadcastPacketQueue.Count > 0)
-                //{
-                //    _broadcastPacketBufferWriter.Clear();
-                //    while (_broadcastPacketQueue.Count > 0)
-                //    {
-                //        if (_broadcastPacketQueue.TryDequeue(out var packet))
-                //        {
-                //            MemoryPackSerializer.Serialize(_broadcastPacketBufferWriter, packet);
-                //        }
-                //    }
-                //    SendBroadcast(_broadcastPacketBufferWriter.GetFilledMemory());
-                //}
-
-                //Console.WriteLine($"Log:: Loop Tick ElapsedMilliseconds : {st.ElapsedMilliseconds}");
+                
                 // Sleep MainLoop Thread
                 if (st.ElapsedMilliseconds < 200)
                 {
                     //Thread.Sleep(1);
+                    Console.WriteLine($"Log:: ElapsedMilliseconds : {st.ElapsedMilliseconds}");
                     Thread.Sleep(Math.Max(0, (int)(200 - st.ElapsedMilliseconds)));
                 }
                 else
                 {
-                    Console.WriteLine($"Log:: Hight Tick with GC ElapsedMilliseconds : {st.ElapsedMilliseconds}");
+                    Console.WriteLine($"Log:: Hight Tick ElapsedMilliseconds : {st.ElapsedMilliseconds}");
                 }
             }
         }
@@ -178,8 +149,6 @@ namespace NetCoreMMOServer
 
             var client = _userPool.Get();
             client.Init(socket);
-            //client.LinkEntity(new EntityDataBase());
-            //_entityTable.TryAdd(client.LinkedEntity!.EntityInfo, client.LinkedEntity);
             RegisterConnectUser(client);
 
             try
@@ -276,24 +245,6 @@ namespace NetCoreMMOServer
                     _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
                     break;
 
-                case EntityDto entity:
-                    Console.WriteLine("Error:: Bug Packet");
-                    break;
-                case MoveDto move:
-                    if (move.Position.Length() >= 30.0f)
-                    {
-                        move.Position = Vector3.Zero;
-                    }
-                    if (_userIDDictionary.ContainsKey(move.NetObjectID))
-                    {
-                        //_userIdDictionary[move.NetObjectID].Position = move.Position;
-                        _broadcastPacketQueue.Enqueue(move);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Error::Not Found NetObject[ID:{move.NetObjectID}]");
-                    }
-                    break;
                 default:
                     Console.WriteLine("Error:: Not Found Packet Protocol!!");
                     break;
@@ -348,18 +299,9 @@ namespace NetCoreMMOServer
                     continue;
                 }
                 _setLinkedEntityPacket.EntityInfo = user.LinkedEntity!.EntityInfo;
-                //var rpcPacket = _rpcPacketBufferWriterPool.Get();
                 MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(user.PacketBufferWriter, _setLinkedEntityPacket);
-                //SendRPCAsync(user, rpcPacket);
             }
 
-            _userEventPacketBufferWriter.Clear();
-            foreach (var user in connectUserList)
-            {
-                //user.AddZone(_zone);
-                //_zone.AddEntity(user.LinkedEntity);
-                //EnterUser(user, user.ID);
-            }
             connectUserList.Clear();
         }
 
@@ -386,11 +328,8 @@ namespace NetCoreMMOServer
                 _userList.Remove(user);
             }
 
-            _userEventPacketBufferWriter.Clear();
             foreach (var user in disconnectUserList)
             {
-                //user.RemoveZone(_zone);
-
                 if (user.LinkedEntity != null)
                 {
                     if(!_entityTable.Remove(user.LinkedEntity.EntityInfo))
@@ -405,8 +344,6 @@ namespace NetCoreMMOServer
                 }
                 _userPool.Return(user);
                 user.LinkedEntity?.CurrentZone.Value?.RemoveEntity(user.LinkedEntity);
-                //_zone.RemoveEntity(user.LinkedEntity);
-                //ExitUser(user.ID);
             }
             disconnectUserList.Clear();
         }
@@ -428,54 +365,6 @@ namespace NetCoreMMOServer
             int x = (int)((pos.X + 15.0f) * 0.1f);
             int y = (int)((pos.Y + 15.0f) * 0.1f);
             entity.MoveZone(_zones[x, y]);
-        }
-
-        private void EnterUser(User client, int userId)
-        {
-            Console.WriteLine($"[{userId}]User Enter!!");
-
-            _entityDto.NetObjectID = userId;
-            _entityDto.IsMine = false;
-            _entityDto.IsSpawn = true;
-            _entityDto.Position = new Vector3(0, 0, 0);
-
-            MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_userEventPacketBufferWriter, _entityDto);
-            SendAnother(client, _userEventPacketBufferWriter.GetFilledMemory());
-
-            _entityDto.IsMine = true;
-            MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_userEventPacketBufferWriter, _entityDto);
-            _ = SendAsync(client, _userEventPacketBufferWriter.GetFilledMemory());
-            //_ = SendAsync(client, MemoryPackSerializer.Serialize<IMPacket>(entityDto));
-            foreach (var user in _userIDDictionary.Values)
-            {
-                if (user.ID != userId)
-                {
-                    _entityDto.NetObjectID = user.ID;
-                    _entityDto.IsMine = false;
-                    _entityDto.IsSpawn = true;
-                    //_entityDto.Position = user.Position;
-                    MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_userEventPacketBufferWriter, _entityDto);
-                    _ = SendAsync(client, _userEventPacketBufferWriter.GetFilledMemory());
-                }
-            }
-            //_ = SendAsync(client, _userEventPacketBufferWriter.GetFilledMemory());
-        }
-
-        private void ExitUser(int userId)
-        {
-            Console.WriteLine($"[{userId}] User Exited...");
-
-            try
-            {
-                _entityDto.NetObjectID = userId;
-                _entityDto.IsSpawn = false;
-                MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_userEventPacketBufferWriter, _entityDto);
-                SendBroadcast(_userEventPacketBufferWriter.GetFilledMemory());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
         }
     }
 }
