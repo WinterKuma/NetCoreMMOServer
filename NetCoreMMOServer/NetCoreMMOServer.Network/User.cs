@@ -1,6 +1,5 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Packet;
-using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 
@@ -46,16 +45,16 @@ namespace NetCoreMMOServer.Network
         {
             _id = id;
 
-            if(socket != null)
+            if (socket != null)
             {
                 _socket = socket;
-                if(pipe == null)
+                if (pipe == null)
                 {
                     _pipe = new DuplexPipe(new NetworkStream(socket));
                 }
             }
 
-            if(pipe != null)
+            if (pipe != null)
             {
                 _pipe = pipe;
             }
@@ -102,16 +101,40 @@ namespace NetCoreMMOServer.Network
         {
             _addZones.Clear();
             _removeZones.Clear();
-            if(_linkedEntity?.CurrentZone.IsDirty ?? false)
+
+            if (_linkedEntity?.CurrentZone.IsDirty ?? false)
             {
-                foreach(var zone in _currentZones)
+                if (_linkedEntity?.CurrentZone.Value == null)
                 {
-                    if(_linkedEntity.CurrentZone.Value != zone)
+                    return;
+                }
+                Zone nextZone = _linkedEntity.CurrentZone.Value;
+
+                // Remove Zone
+                foreach (var zone in _currentZones)
+                {
+                    int x = Math.Abs(zone.ZoneCoord.X - nextZone.ZoneCoord.X);
+                    int y = Math.Abs(zone.ZoneCoord.Y - nextZone.ZoneCoord.Y);
+                    int z = Math.Abs(zone.ZoneCoord.Z - nextZone.ZoneCoord.Z);
+
+                    if (x >= ZoneOption.RemoveZoneRangeX ||
+                        y >= ZoneOption.RemoveZoneRangeY ||
+                        z >= ZoneOption.RemoveZoneRangeZ)
                     {
                         RemoveZone(zone);
                     }
                 }
-                AddZone(_linkedEntity.CurrentZone.Value!);
+
+                for (int x = Math.Max(0, nextZone.ZoneCoord.X - ZoneOption.AddZoneRangeX); x <= Math.Min(ZoneOption.ZoneCountX - 1, nextZone.ZoneCoord.X + ZoneOption.AddZoneRangeX); x++)
+                {
+                    for (int y = Math.Max(0, nextZone.ZoneCoord.Y - ZoneOption.AddZoneRangeY); y <= Math.Min(ZoneOption.ZoneCountY - 1, nextZone.ZoneCoord.Y + ZoneOption.AddZoneRangeY); y++)
+                    {
+                        for (int z = Math.Max(0, nextZone.ZoneCoord.Z - ZoneOption.AddZoneRangeZ); z <= Math.Min(ZoneOption.ZoneCountZ - 1, nextZone.ZoneCoord.Z + ZoneOption.AddZoneRangeZ); z++)
+                        {
+                            AddZone(nextZone.ZoneGridPointer[x, y, z]);
+                        }
+                    }
+                }
                 _linkedEntity.CurrentZone.IsDirty = false;
             }
 

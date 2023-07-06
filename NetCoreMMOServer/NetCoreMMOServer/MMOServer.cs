@@ -24,11 +24,11 @@ namespace NetCoreMMOServer
         private Dictionary<int, User> _userIDDictionary;
 
         private SwapChain<Queue<IMPacket>> _packetQueueSwapChain;
-        private Queue<IMPacket> _broadcastPacketQueue;
+        //private Queue<IMPacket> _broadcastPacketQueue;
 
         private ConcurrentPool<PacketBufferWriter> _rpcPacketBufferWriterPool;
 
-        private Zone[,] _zones;
+        private Zone[,,] _zones;
         private Dictionary<EntityInfo, EntityDataBase> _entityTable;
         //private ConcurrentPool<EntityDataBase> _entityDataBasePool;
 
@@ -47,15 +47,18 @@ namespace NetCoreMMOServer
             _userIDDictionary = new();
 
             _packetQueueSwapChain = new();
-            _broadcastPacketQueue = new();
+            //_broadcastPacketQueue = new();
 
-            _zones = new Zone[3, 3];
-            for(int x = 0; x < 3; ++x)
+            _zones = new Zone[ZoneOption.ZoneCountX, ZoneOption.ZoneCountY, ZoneOption.ZoneCountZ];
+            for(int x = 0; x < ZoneOption.ZoneCountX; ++x)
             {
-                for(int y = 0; y < 3; ++y)
+                for(int y = 0; y < ZoneOption.ZoneCountY; ++y)
                 {
-                    _zones[x, y] = new Zone();
-                    _zones[x, y].Init(new Vector3Int(x, y, 0));
+                    for (int z = 0; z < ZoneOption.ZoneCountZ; ++z)
+                    {
+                        _zones[x, y, z] = new Zone(new Vector3Int(x, y, z), _zones);
+                        //_zones[x, y, z].Init(new Vector3Int(x, y, z));
+                    }
                 }
             }
             _entityTable = new();
@@ -351,20 +354,24 @@ namespace NetCoreMMOServer
         private void SetZone(EntityDataBase entity)
         {
             Vector3 pos = entity.Position.Value;
-            if (pos.X > 15.0f ||
-                pos.Y > 15.0f ||
-                pos.X < -15.0f ||
-                pos.Y < -15.0f)
+            if (pos.X > ZoneOption.TotalZoneHalfWidth ||
+                pos.Y > ZoneOption.TotalZoneHalfHeight ||
+                pos.Z > ZoneOption.TotalZoneHalfDepth ||
+                pos.X < -ZoneOption.TotalZoneHalfWidth ||
+                pos.Y < -ZoneOption.TotalZoneHalfHeight ||
+                pos.Z < -ZoneOption.TotalZoneHalfDepth)
             {
                 entity.Position.Value = Vector3.Zero;
                 entity.Position.IsDirty = true;
-                entity.MoveZone(_zones[1, 1]);
-                return;
+                //entity.MoveZone(_zones[1, 1]);
+                //return;
+                pos = entity.Position.Value;
             }
 
-            int x = (int)((pos.X + 15.0f) * 0.1f);
-            int y = (int)((pos.Y + 15.0f) * 0.1f);
-            entity.MoveZone(_zones[x, y]);
+            int x = (int)((pos.X + ZoneOption.TotalZoneHalfWidth) * ZoneOption.InverseZoneWidth);
+            int y = (int)((pos.Y + ZoneOption.TotalZoneHalfHeight) * ZoneOption.InverseZoneHeight);
+            int z = (int)((pos.Z + ZoneOption.TotalZoneHalfDepth) * ZoneOption.InverseZoneDepth);
+            entity.MoveZone(_zones[x, y, z]);
         }
     }
 }
