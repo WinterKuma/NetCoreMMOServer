@@ -8,6 +8,7 @@ namespace NetCoreMMOServer.Network
         private int _zoneID;
         private Vector3Int _zoneCoord;
         private Zone[,,] _zoneGridPointer;
+        private Queue<(IMPacket, User)> _packetQueue;
 
         private List<EntityDataBase> _oldEntities = new();
         private List<EntityDataBase> _currentEntities = new();
@@ -17,6 +18,7 @@ namespace NetCoreMMOServer.Network
         public int ZoneID => _zoneID;
         public Vector3Int ZoneCoord => _zoneCoord;
         public Zone[,,] ZoneGridPointer => _zoneGridPointer;
+        public Queue<(IMPacket, User)> PacketQueue => _packetQueue;
         public List<EntityDataBase> OldEntities => _oldEntities;
         public List<EntityDataBase> CurrentEntities => _currentEntities;
         public List<EntityDataBase> AddEntities => _addEntities;
@@ -26,6 +28,7 @@ namespace NetCoreMMOServer.Network
         {
             Init(ZoneCoord);
             _zoneGridPointer = ZoneGridPointer;
+            _packetQueue = new Queue<(IMPacket, User)> ();
         }
 
         public void Init(Vector3Int zoneCoord)

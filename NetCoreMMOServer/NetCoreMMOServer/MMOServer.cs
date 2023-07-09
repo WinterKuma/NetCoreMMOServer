@@ -23,11 +23,12 @@ namespace NetCoreMMOServer
         private ConcurrentPool<User> _userPool;
         private Dictionary<int, User> _userIDDictionary;
 
-        private SwapChain<Queue<IMPacket>> _packetQueueSwapChain;
+        private SwapChain<Queue<(IMPacket, User)>> _packetQueueSwapChain;
         //private Queue<IMPacket> _broadcastPacketQueue;
 
         private ConcurrentPool<PacketBufferWriter> _rpcPacketBufferWriterPool;
 
+        private List<Zone> _zoneList;
         private Zone[,,] _zones;
         private Dictionary<EntityInfo, EntityDataBase> _entityTable;
         //private ConcurrentPool<EntityDataBase> _entityDataBasePool;
@@ -49,6 +50,7 @@ namespace NetCoreMMOServer
             _packetQueueSwapChain = new();
             //_broadcastPacketQueue = new();
 
+            _zoneList = new List<Zone>(ZoneOption.ZoneCountX * ZoneOption.ZoneCountY * ZoneOption.ZoneCountZ);
             _zones = new Zone[ZoneOption.ZoneCountX, ZoneOption.ZoneCountY, ZoneOption.ZoneCountZ];
             for(int x = 0; x < ZoneOption.ZoneCountX; ++x)
             {
@@ -57,6 +59,7 @@ namespace NetCoreMMOServer
                     for (int z = 0; z < ZoneOption.ZoneCountZ; ++z)
                     {
                         _zones[x, y, z] = new Zone(new Vector3Int(x, y, z), _zones);
+                        _zoneList.Add(_zones[x, y, z]);
                         //_zones[x, y, z].Init(new Vector3Int(x, y, z));
                     }
                 }
@@ -99,10 +102,38 @@ namespace NetCoreMMOServer
                 {
                     if (packetQueue.TryDequeue(out var packet))
                     {
-                        ProcessPacket(packet);
-                        PacketPool.ReturnPacket(packet);
+                        packet.Item2?.LinkedEntity?.CurrentZone.Value?.PacketQueue.Enqueue(packet);
+                        //ProcessPacket(packet.Item1);
+                        //PacketPool.ReturnPacket(packet.Item1);
                     }
                 }
+
+                // Update Zone Threading
+                Parallel.ForEach(_zoneList,
+                    zone =>
+                    {
+                        while (zone.PacketQueue.Count > 0)
+                        {
+                            if (zone.PacketQueue.TryDequeue(out var packet))
+                            {
+                                ProcessPacket(packet.Item1);
+                                PacketPool.ReturnPacket(packet.Item1);
+                            }
+                        }
+                    });
+
+                //_zoneList.AsParallel().WithDegreeOfParallelism(2).ForAll(
+                //    zone =>
+                //{
+                //    while (zone.PacketQueue.Count > 0)
+                //    {
+                //        if (zone.PacketQueue.TryDequeue(out var packet))
+                //        {
+                //            ProcessPacket(packet.Item1);
+                //            PacketPool.ReturnPacket(packet.Item1);
+                //        }
+                //    }
+                //});
 
                 // Update Disconnect User
                 ProcessDisconnectUser();
@@ -215,7 +246,7 @@ namespace NetCoreMMOServer
 
                         lock (_packetQueueSwapChain.CurrentBuffer)
                         {
-                            _packetQueueSwapChain.CurrentBuffer.Enqueue(packet);
+                            _packetQueueSwapChain.CurrentBuffer.Enqueue((packet, user));
                         }
                     }
 
