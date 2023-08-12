@@ -1,6 +1,7 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
+using NetCoreMMOServer.Physics;
 using NetCoreMMOServer.Utility;
 using System;
 using System.Buffers;
@@ -36,6 +37,8 @@ namespace NetCoreMMOServer
         //Packet Instance
         private SetLinkedEntityPacket _setLinkedEntityPacket;
 
+        private Simulator _physiscSimulator;
+
         public MMOServer(int port)
         {
             _port = port;
@@ -67,6 +70,8 @@ namespace NetCoreMMOServer
             _entityTable = new();
 
             _setLinkedEntityPacket = new();
+
+            _physiscSimulator = new();
         }
 
         public void Start(int backlog = (int)SocketOptionName.MaxConnections)
@@ -102,25 +107,25 @@ namespace NetCoreMMOServer
                 {
                     if (packetQueue.TryDequeue(out var packet))
                     {
-                        packet.Item2?.LinkedEntity?.CurrentZone.Value?.PacketQueue.Enqueue(packet);
-                        //ProcessPacket(packet.Item1);
-                        //PacketPool.ReturnPacket(packet.Item1);
+                        //packet.Item2?.LinkedEntity?.CurrentZone.Value?.PacketQueue.Enqueue(packet);
+                        ProcessPacket(packet.Item1);
+                        PacketPool.ReturnPacket(packet.Item1);
                     }
                 }
 
                 // Update Zone Threading
-                Parallel.ForEach(_zoneList,
-                    zone =>
-                    {
-                        while (zone.PacketQueue.Count > 0)
-                        {
-                            if (zone.PacketQueue.TryDequeue(out var packet))
-                            {
-                                ProcessPacket(packet.Item1);
-                                PacketPool.ReturnPacket(packet.Item1);
-                            }
-                        }
-                    });
+                //Parallel.ForEach(_zoneList,
+                //    zone =>
+                //    {
+                //        while (zone.PacketQueue.Count > 0)
+                //        {
+                //            if (zone.PacketQueue.TryDequeue(out var packet))
+                //            {
+                //                ProcessPacket(packet.Item1);
+                //                PacketPool.ReturnPacket(packet.Item1);
+                //            }
+                //        }
+                //    });
 
                 //_zoneList.AsParallel().WithDegreeOfParallelism(2).ForAll(
                 //    zone =>
@@ -134,6 +139,15 @@ namespace NetCoreMMOServer
                 //        }
                 //    }
                 //});
+
+                _physiscSimulator.ResetEntity();
+
+                foreach (var entity in _entityTable.Values)
+                {
+                    _physiscSimulator.AddEntity(entity);
+                }
+
+                _physiscSimulator.Update(dt);
 
                 // Update Disconnect User
                 ProcessDisconnectUser();

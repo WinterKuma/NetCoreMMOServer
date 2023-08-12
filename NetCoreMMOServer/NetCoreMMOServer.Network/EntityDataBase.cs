@@ -1,5 +1,5 @@
 ﻿using NetCoreMMOServer.Packet;
-using System.Collections.Generic;
+using NetCoreMMOServer.Physics;
 using System.Numerics;
 
 namespace NetCoreMMOServer.Network
@@ -37,6 +37,10 @@ namespace NetCoreMMOServer.Network
         // Base Param
         public SyncData<bool> IsActive = new(true);
         public SyncData<Vector3> Position = new(new Vector3(0.0f, 0.0f, 0.0f));
+        public SyncData<Vector3> Velocity = new(new Vector3(0.0f, 0.0f, 0.0f));
+
+        // Component System
+        public List<Component.Component> components;
 
         public EntityDataBase()
         {
@@ -52,8 +56,23 @@ namespace NetCoreMMOServer.Network
             _syncDatas = new(32)
             {
                 IsActive,
-                Position
+                Position,
+                Velocity,
             };
+
+            components = new(12);
+
+            RigidBody rigidBody = new();
+            SphereCollider collider = new();
+            collider.Offset = Vector3.Zero;
+            collider.Radius = 0.5f;
+            collider.AttachedRigidbody = rigidBody;
+
+            rigidBody.SetEntityDataBase(this);
+            collider.SetEntityDataBase(this);
+
+            components.Add(rigidBody);
+            components.Add(collider);
 
             Init(_entityInfo);
         }
@@ -69,6 +88,8 @@ namespace NetCoreMMOServer.Network
             _updateDataTablePacket.EntityInfo = _entityInfo;
             _disposeDataTablePacket.EntityInfo = _entityInfo;
             _currentZone.Value = null;
+
+            //components.Clear();
         }
 
         public EntityInfo EntityInfo => _entityInfo;

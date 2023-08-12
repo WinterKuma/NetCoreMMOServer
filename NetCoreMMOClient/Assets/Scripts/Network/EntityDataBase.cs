@@ -18,6 +18,7 @@ namespace NetCoreMMOServer.Network
         // Base Param
         public SyncData<bool> IsActive { get; set; } = new(true);
         public SyncData<Vector3> Position { get; set; } = new(new Vector3(0.0f, 0.0f, 0.0f));
+        public SyncData<Vector3> Velocity { get; set; } = new(new Vector3(0.0f, 0.0f, 0.0f));
 
         public EntityDataBase()
         {
@@ -31,7 +32,8 @@ namespace NetCoreMMOServer.Network
             _syncDatas = new(32)
             {
                 IsActive,
-                Position
+                Position,
+                Velocity,
             };
 
             Init(_entityInfo);

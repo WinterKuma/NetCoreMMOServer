@@ -146,7 +146,7 @@ namespace DummyClient
             {
                 _position = _linkedEntity.Position.Value;
                 _position += _moveDir * dt * _moveSpeed;
-                _linkedEntity.Position.Value = _position;
+                _linkedEntity.Velocity.Value = _moveDir * _moveSpeed;
                 SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
                 _linkedEntity.ClearDataTablePacket();
             }
