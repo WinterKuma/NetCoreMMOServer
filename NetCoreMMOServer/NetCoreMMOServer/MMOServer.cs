@@ -67,7 +67,20 @@ namespace NetCoreMMOServer
                     }
                 }
             }
+
             _entityTable = new();
+            for(int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
+            {
+                for(int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
+                {
+                    if(!CreateEntity(EntityType.Block, out EntityDataBase entity))
+                    {
+                        Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                        continue;
+                    }
+                    entity.Position.Value = new Vector3(x, -2f, z);
+                }
+            }
 
             _setLinkedEntityPacket = new();
 
@@ -178,11 +191,11 @@ namespace NetCoreMMOServer
                 }
                 
                 // Sleep MainLoop Thread
-                if (st.ElapsedMilliseconds < 200)
+                if (st.ElapsedMilliseconds < 100)
                 {
                     //Thread.Sleep(1);
                     Console.WriteLine($"Log:: ElapsedMilliseconds : {st.ElapsedMilliseconds}");
-                    Thread.Sleep(Math.Max(0, (int)(200 - st.ElapsedMilliseconds)));
+                    Thread.Sleep(Math.Max(0, (int)(100 - st.ElapsedMilliseconds)));
                 }
                 else
                 {
@@ -340,7 +353,7 @@ namespace NetCoreMMOServer
                     Console.WriteLine($"Log:: Success!! => _userIdDictionary.TryAdd({user.ID}, {user})");
                 }
                 _userList.Add(user);
-                user.LinkEntity(new EntityDataBase());
+                user.LinkEntity(new PlayerEntity());
                 if (!_entityTable.TryAdd(user.LinkedEntity!.EntityInfo, user.LinkedEntity))
                 {
                     Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({user.LinkedEntity.EntityInfo}, {user.LinkedEntity})");
@@ -396,6 +409,30 @@ namespace NetCoreMMOServer
             disconnectUserList.Clear();
         }
 
+        private bool CreateEntity(EntityType entityType, out EntityDataBase entity)
+        {
+            switch(entityType)
+            {
+                case EntityType.Player:
+                    entity = new PlayerEntity();
+                    break;
+                case EntityType.Block:
+                    entity = new BlockEntity();
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            if (!_entityTable.TryAdd(entity.EntityInfo, entity))
+            {
+                Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({entity.EntityInfo}, {entity})");
+                return false;
+            }
+
+            return true;
+        }
+
         private void SetZone(EntityDataBase entity)
         {
             Vector3 pos = entity.Position.Value;
@@ -413,9 +450,9 @@ namespace NetCoreMMOServer
                 pos = entity.Position.Value;
             }
 
-            int x = (int)((pos.X + ZoneOption.TotalZoneHalfWidth) * ZoneOption.InverseZoneWidth);
-            int y = (int)((pos.Y + ZoneOption.TotalZoneHalfHeight) * ZoneOption.InverseZoneHeight);
-            int z = (int)((pos.Z + ZoneOption.TotalZoneHalfDepth) * ZoneOption.InverseZoneDepth);
+            int x = Math.Clamp((int)((pos.X + ZoneOption.TotalZoneHalfWidth) * ZoneOption.InverseZoneWidth), 0, ZoneOption.ZoneCountX - 1);
+            int y = Math.Clamp((int)((pos.Y + ZoneOption.TotalZoneHalfHeight) * ZoneOption.InverseZoneHeight), 0, ZoneOption.ZoneCountY - 1);
+            int z = Math.Clamp((int)((pos.Z + ZoneOption.TotalZoneHalfDepth) * ZoneOption.InverseZoneDepth), 0, ZoneOption.ZoneCountZ - 1);
             entity.MoveZone(_zones[x, y, z]);
         }
     }

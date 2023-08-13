@@ -154,6 +154,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EntityPrefab: {fileID: 5784468944449105544, guid: 6597d333247d27643aae25ce6143b5a1,
     type: 3}
+  GroundPrefab: {fileID: 5784468944449105544, guid: 738a419ce5a0e6e46a07633d55d8d6a8,
+    type: 3}
 --- !u!4 &181763125
 Transform:
   m_ObjectHideFlags: 0

@@ -10,7 +10,7 @@ namespace NetCoreMMOServer
     {
         public static readonly int ZoneCountX = 5;
         public static readonly int ZoneCountY = 5;
-        public static readonly int ZoneCountZ = 3;
+        public static readonly int ZoneCountZ = 5;
 
         public static readonly float ZoneWidth = 5.0f;
         public static readonly float ZoneHeight = 5.0f;
@@ -24,12 +24,12 @@ namespace NetCoreMMOServer
         public static readonly float TotalZoneHalfHeight = ZoneCountY * 0.5f * ZoneHeight;
         public static readonly float TotalZoneHalfDepth = ZoneCountZ * 0.5f * ZoneDepth;
 
-        public static readonly int AddZoneRangeX = 1;
-        public static readonly int AddZoneRangeY = 1;
-        public static readonly int AddZoneRangeZ = 1;
+        public static readonly int AddZoneRangeX = 2;
+        public static readonly int AddZoneRangeY = 2;
+        public static readonly int AddZoneRangeZ = 2;
 
-        public static readonly int RemoveZoneRangeX = 2;
-        public static readonly int RemoveZoneRangeY = 2;
-        public static readonly int RemoveZoneRangeZ = 2;
+        public static readonly int RemoveZoneRangeX = 3;
+        public static readonly int RemoveZoneRangeY = 3;
+        public static readonly int RemoveZoneRangeZ = 3;
     }
 }

@@ -21,8 +21,8 @@ namespace NetCoreMMOServer.Physics
         }
 
         public Vector3 Center => Owner.Position.Value + _offset;
-        public Vector3 MaxPosition => Center + Size;
-        public Vector3 MinPosition => Center - Size;
+        public Vector3 MaxPosition => Center + Size * 0.5f;
+        public Vector3 MinPosition => Center - Size * 0.5f;
 
         public override bool CheckCollision(Collider other, out Vector3 normal, out float depth)
         {
@@ -37,6 +37,7 @@ namespace NetCoreMMOServer.Physics
                     break;
 
                 case SphereCollider sphere:
+                    result = this.IsCollideWithSphere(sphere, out normal, out depth);
                     break;
 
                 default:

@@ -32,6 +32,7 @@ namespace NetCoreMMOServer.Physics
             switch (other)
             {
                 case CubeCollider cube:
+                    result = this.IsCollideWithCube(cube, out normal, out depth);
                     break;
 
                 case SphereCollider sphere:

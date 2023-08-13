@@ -16,9 +16,17 @@ namespace DummyClient
         private Vector3 _position;
 
         private bool _isActive = true;
-        private float _activeTime = 0.0f;
+        private float _activeTimer = 0.0f;
+        private readonly float _activeMinTime = 0.6f;
+        private readonly float _activeMaxTime = 1.2f;
+        private readonly float _activeMinDelay = 0.2f;
+        private readonly float _activeMaxDelay = 0.8f;
         private Vector3 _moveDir = Vector3.Zero;
         private float _moveSpeed = 3.0f;
+        private float _jumpTimer = 0.0f;
+        private readonly float _jumpMinTime = 0.8f;
+        private readonly float _jumpMaxTime = 6.4f;
+        private float _jumpPower = 6.0f;
 
         private Random _random = new Random();
 
@@ -122,34 +130,62 @@ namespace DummyClient
                 return;
             }
 
-            _activeTime -= dt;
-            if (_activeTime <= 0.0f)
+            _activeTimer -= dt;
+            if(_activeTimer <= 0)
             {
-                _activeTime = _random.Next(1, 4);
-                _isActive = true;
-                _moveDir = _random.Next(0, 8) switch
+                if(_isActive)
                 {
-                    0 => new Vector3(0.0f, -1.0f, 0.0f),
-                    1 => new Vector3(1.0f, -1.0f, 0.0f),
-                    2 => new Vector3(1.0f, 0.0f, 0.0f),
-                    3 => new Vector3(1.0f, 1.0f, 0.0f),
-                    4 => new Vector3(0.0f, 1.0f, 0.0f),
-                    5 => new Vector3(-1.0f, 1.0f, 0.0f),
-                    6 => new Vector3(-1.0f, 0.0f, 0.0f),
-                    7 => new Vector3(-1.0f, -1.0f, 0.0f),
-                    _ => _moveDir,
-                };
-                _moveDir = _moveDir / _moveDir.Length();
+                    _activeTimer = _random.NextSingle() * (_activeMaxDelay - _activeMinDelay) + _activeMinDelay;
+                }
+                else
+                {
+                    _activeTimer = _random.NextSingle() * (_activeMaxTime - _activeMinTime) + _activeMinTime;
+
+                    _moveDir = _random.Next(0, 8) switch
+                    {
+                        0 => new Vector3(0.0f, 0.0f, -1.0f),
+                        1 => new Vector3(1.0f, 0.0f, -1.0f),
+                        2 => new Vector3(1.0f, 0.0f, 0.0f),
+                        3 => new Vector3(1.0f, 0.0f, 1.0f),
+                        4 => new Vector3(0.0f, 0.0f, 1.0f),
+                        5 => new Vector3(-1.0f, 0.0f, 1.0f),
+                        6 => new Vector3(-1.0f, 0.0f, 0.0f),
+                        7 => new Vector3(-1.0f, 0.0f, -1.0f),
+                        _ => _moveDir,
+                    };
+                    _moveDir = _moveDir / _moveDir.Length();
+                }
+                _isActive = !_isActive;
             }
 
-            if (_isActive)
+            bool isJump = false;
+            _jumpTimer -= dt;
+            if (_jumpTimer <= 0.0f)
             {
-                _position = _linkedEntity.Position.Value;
-                _position += _moveDir * dt * _moveSpeed;
-                _linkedEntity.Velocity.Value = _moveDir * _moveSpeed;
-                SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
-                _linkedEntity.ClearDataTablePacket();
+                _jumpTimer = _random.NextSingle() * (_jumpMaxTime - _jumpMinTime) + _jumpMinTime;
+                isJump = true;
             }
+
+            _linkedEntity.Velocity.Value = _moveDir * _moveSpeed + Vector3.UnitY * _linkedEntity.Velocity.Value.Y;
+            if (isJump)
+            {
+                _linkedEntity.Velocity.Value = new Vector3(_linkedEntity.Velocity.Value.X, _jumpPower, _linkedEntity.Velocity.Value.Z);
+            }
+
+            //if (_isActive)
+            //{
+            //    _position = _linkedEntity.Position.Value;
+            //    _position += _moveDir * dt * _moveSpeed;
+            //    _linkedEntity.Velocity.Value = _moveDir * _moveSpeed;
+            //    SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
+            //    _linkedEntity.ClearDataTablePacket();
+            //}
+
+            //_position = _linkedEntity.Position.Value;
+            //_position += _moveDir * dt * _moveSpeed;
+            //_linkedEntity.Velocity.Value = _moveDir * _moveSpeed;
+            SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
+            _linkedEntity.ClearDataTablePacket();
         }
 
         public async void SendPacketMessage(ReadOnlyMemory<byte> packet)

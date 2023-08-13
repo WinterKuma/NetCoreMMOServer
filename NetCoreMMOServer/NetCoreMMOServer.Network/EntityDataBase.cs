@@ -13,13 +13,47 @@ namespace NetCoreMMOServer.Network
 
     public partial class PlayerEntity : EntityDataBase
     {
-        public PlayerEntity()
+        public PlayerEntity() : base(EntityType.Player)
         {
-            _syncDatas.Add(power);
-            _syncDatas.Add(hp);
+            //_syncDatas.Add(power);
+            //_syncDatas.Add(hp);
+
+            RigidBody rigidBody = new();
+            SphereCollider collider = new();
+            collider.Offset = Vector3.Zero;
+            collider.Radius = 0.5f;
+            collider.AttachedRigidbody = rigidBody;
+
+            rigidBody.SetEntityDataBase(this);
+            collider.SetEntityDataBase(this);
+
+            components.Add(rigidBody);
+            components.Add(collider);
+
+            Init(EntityInfo);
         }
     }
 
+    public partial class BlockEntity : EntityDataBase
+    {
+        public BlockEntity() : base(EntityType.Block)
+        {
+            RigidBody rigidBody = new(1f, true);
+
+            CubeCollider collider = new();
+            collider.Offset = Vector3.Zero;
+            collider.Size = Vector3.One;
+            collider.AttachedRigidbody = rigidBody;
+
+            rigidBody.SetEntityDataBase(this);
+            collider.SetEntityDataBase(this);
+
+            components.Add(rigidBody);
+            components.Add(collider);
+
+            Init(EntityInfo);
+        }
+    }
 
     public class EntityDataBase
     {
@@ -42,8 +76,9 @@ namespace NetCoreMMOServer.Network
         // Component System
         public List<Component.Component> components;
 
-        public EntityDataBase()
+        public EntityDataBase(EntityType entityType = EntityType.None)
         {
+            _entityInfo.EntityType = entityType;
             _entityInfo.EntityID = ++s_MaxEntityID;
 
             _initDataTablePacket = new();
@@ -61,18 +96,6 @@ namespace NetCoreMMOServer.Network
             };
 
             components = new(12);
-
-            RigidBody rigidBody = new();
-            SphereCollider collider = new();
-            collider.Offset = Vector3.Zero;
-            collider.Radius = 0.5f;
-            collider.AttachedRigidbody = rigidBody;
-
-            rigidBody.SetEntityDataBase(this);
-            collider.SetEntityDataBase(this);
-
-            components.Add(rigidBody);
-            components.Add(collider);
 
             Init(_entityInfo);
         }

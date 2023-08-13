@@ -99,6 +99,7 @@ namespace NetCoreMMOServer.Packet
     {
         None = 0,
         Player = 1,
+        Block = 2,
     }
 
     public struct EntityInfo : IEquatable<EntityInfo>

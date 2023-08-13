@@ -6,10 +6,26 @@ namespace NetCoreMMOServer.Physics
     public class RigidBody : Component
     {
         private Vector3 _velocity;
-        private Vector3 _gravity;
         private float _mass;
+        private float _invMass;
 
-        private bool _isStatic = false;
+        private bool _isStatic;
+
+        public RigidBody(float mass = 1f, bool isStatic = false, Vector3 velocity = default)
+        {
+            _mass = mass;
+            if(isStatic)
+            {
+                _invMass = 0f;
+            }
+            else
+            {
+                _invMass = 1 / _mass;
+            }
+
+            _isStatic = isStatic;
+            _velocity = velocity;
+        }
 
         public bool IsStatic => _isStatic;
 
@@ -19,10 +35,19 @@ namespace NetCoreMMOServer.Physics
             set { _velocity = value; }
         }
 
-        public Vector3 Gravity
+        public float Mass
         {
-            get { return _gravity; }
-            set { _gravity = value; }
+            get { return _mass; }
+            set 
+            { 
+                _mass = value;
+                _invMass = 1 / _mass;
+            }
+        }
+
+        public float InvMass
+        {
+            get { return _invMass; }
         }
     }
 }

@@ -44,7 +44,17 @@ namespace NetCoreMMOServer.Physics
                     continue;
                 }
                 // gravity
+                float gravity = rigidBody.Velocity.Y;
                 rigidBody.Velocity = rigidBody.Owner.Velocity.Value;
+                //rigidBody.Velocity += new Vector3(0.0f, gravity + -9.81f * dt, 0.0f);
+                if(rigidBody.Owner.Velocity.Value.Y == 0.0f)
+                {
+                    rigidBody.Velocity += new Vector3(0.0f, gravity + -9.81f * dt, 0.0f);
+                }
+                else
+                {
+                    rigidBody.Owner.Velocity.Value = new Vector3(rigidBody.Owner.Velocity.Value.X, 0.0f, rigidBody.Owner.Velocity.Value.Z);
+                }
             }
 
             for(int i = 0; i < 10; i++)
@@ -107,19 +117,34 @@ namespace NetCoreMMOServer.Physics
 
             float depthAmout = depth;
 
-            if(bodyAStatic)
+            Vector3 relativeVelocity = bodyB?.Velocity ?? Vector3.Zero - bodyA?.Velocity ?? Vector3.Zero;
+            Vector3 impulse = Vector3.Zero;
+            if (Vector3.Dot(relativeVelocity, normal) < 0)
+            {
+                float j = -1f * Vector3.Dot(relativeVelocity, normal);
+                j /= (bodyA?.InvMass ?? 0f) + (bodyB?.InvMass ?? 0f);
+                impulse = j * normal;
+            }
+
+
+            if (bodyAStatic)
             {
                 bodyB!.Owner.Position.Value += normal * depth;
+                bodyB!.Velocity += impulse * bodyB.InvMass;
             }
             else if(bodyBStatic)
             {
                 bodyA!.Owner.Position.Value += normal * depth;
+                bodyA!.Velocity -= impulse * bodyA.InvMass;
             }
             else
             {
                 float depthAmount = depth * 0.5f;
                 bodyA!.Owner.Position.Value += -normal * depth;
                 bodyB!.Owner.Position.Value += normal * depth;
+
+                bodyA!.Velocity -= impulse * bodyA.InvMass;
+                bodyB!.Velocity += impulse * bodyB.InvMass;
             }
         }
     }

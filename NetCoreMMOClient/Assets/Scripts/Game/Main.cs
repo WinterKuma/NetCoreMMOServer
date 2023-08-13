@@ -18,6 +18,7 @@ public class Main : MonoBehaviour
 
     private Dictionary<EntityInfo, Entity> _entityDictionary = new();
     public GameObject EntityPrefab;
+    public GameObject GroundPrefab;
 
     private EntityInfo _entityInfo;
     private Entity? _linkedEntity = null;
@@ -110,7 +111,21 @@ public class Main : MonoBehaviour
 
     public Entity CreateEntity(EntityDataTable entityDataTable)
     {
-        Entity entity = Instantiate(EntityPrefab, Vector3.zero, Quaternion.identity).GetComponent<Entity>();
+        GameObject obj = null;
+        switch(entityDataTable.EntityInfo.EntityType)
+        {
+            case EntityType.Player:
+                obj = EntityPrefab;
+                break;
+            case EntityType.Block:
+                obj = GroundPrefab;
+                break;
+
+            default:
+                Debug.LogError($"Not Found EntityType");
+                throw new Exception();
+        }
+        Entity entity = Instantiate(obj, Vector3.zero, Quaternion.identity).GetComponent<Entity>();
         entity.IsMine = _entityInfo.EntityID == entityDataTable.EntityInfo.EntityID;
         entity.NetObjectID = (int)entityDataTable.EntityInfo.EntityID;
         entity.EntityData = new EntityDataBase();
