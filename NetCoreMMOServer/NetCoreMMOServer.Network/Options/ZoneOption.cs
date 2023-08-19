@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NetCoreMMOServer
+﻿namespace NetCoreMMOServer
 {
     public static class ZoneOption
     {
@@ -24,12 +18,12 @@ namespace NetCoreMMOServer
         public static readonly float TotalZoneHalfHeight = ZoneCountY * 0.5f * ZoneHeight;
         public static readonly float TotalZoneHalfDepth = ZoneCountZ * 0.5f * ZoneDepth;
 
-        public static readonly int AddZoneRangeX = 2;
+        public static readonly int AddZoneRangeX = 3;
         public static readonly int AddZoneRangeY = 2;
-        public static readonly int AddZoneRangeZ = 2;
+        public static readonly int AddZoneRangeZ = 3;
 
-        public static readonly int RemoveZoneRangeX = 3;
+        public static readonly int RemoveZoneRangeX = 5;
         public static readonly int RemoveZoneRangeY = 3;
-        public static readonly int RemoveZoneRangeZ = 3;
+        public static readonly int RemoveZoneRangeZ = 5;
     }
 }

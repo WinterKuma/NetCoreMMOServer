@@ -25,26 +25,28 @@ namespace NetCoreMMOServer.Physics
 
         public override bool CheckCollision(Collider other, out Vector3 normal, out float depth)
         {
-            bool result = false;
-            normal = Vector3.Zero;
-            depth = 0;
+            //bool result = false;
+            //normal = Vector3.Zero;
+            //depth = 0;
 
             switch (other)
             {
                 case CubeCollider cube:
-                    result = this.IsCollideWithCube(cube, out normal, out depth);
+                    return this.IsCollideWithCube(cube, out normal, out depth);
                     break;
 
                 case SphereCollider sphere:
-                    result = this.IsCollideWithSphere(sphere, out normal, out depth);
+                    return this.IsCollideWithSphere(sphere, out normal, out depth);
                     break;
 
                 default:
-                    result = false;
+                    normal = Vector3.Zero;
+                    depth = 0;
+                    return false;
                     break;
             }
 
-            return result;
+            //return result;
         }
     }
 }

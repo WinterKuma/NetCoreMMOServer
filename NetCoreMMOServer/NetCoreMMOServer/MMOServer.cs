@@ -153,14 +153,29 @@ namespace NetCoreMMOServer
                 //    }
                 //});
 
-                _physiscSimulator.ResetEntity();
-
-                foreach (var entity in _entityTable.Values)
+                //_physiscSimulator.ResetEntity();
+                //
+                //foreach (var entity in _entityTable.Values)
+                //{
+                //    _physiscSimulator.AddEntity(entity);
+                //}
+                //
+                //_physiscSimulator.Update(dt);
+                
+                Parallel.ForEach(_zoneList,
+                    zone =>
+                    {
+                        zone.FixedUpdate(dt);
+                    });
+                
+                for (int i = 0; i < PhysicsOption.StepCount; i++)
                 {
-                    _physiscSimulator.AddEntity(entity);
+                    Parallel.ForEach(_zoneList,
+                        zone =>
+                        {
+                            zone.Step(dt * PhysicsOption.InverseStepCount);
+                        });
                 }
-
-                _physiscSimulator.Update(dt);
 
                 // Update Disconnect User
                 ProcessDisconnectUser();
@@ -445,6 +460,8 @@ namespace NetCoreMMOServer
             {
                 entity.Position.Value = Vector3.Zero;
                 entity.Position.IsDirty = true;
+                entity.Velocity.Value = Vector3.UnitY;
+                entity.Velocity.IsDirty = true;
                 //entity.MoveZone(_zones[1, 1]);
                 //return;
                 pos = entity.Position.Value;

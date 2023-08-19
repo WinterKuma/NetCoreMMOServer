@@ -21,7 +21,7 @@ namespace NetCoreMMOServer.Physics
         }
 
         public abstract bool CheckCollision(Collider other, out Vector3 normal, out float depth);
-        public void OnCollider(Collider other) { }
-        public void OnTrigger(Collider other) { }
+        public virtual void OnCollider(Collider other) { }
+        public virtual void OnTrigger(Collider other) { }
     }
 }
