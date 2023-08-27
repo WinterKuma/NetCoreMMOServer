@@ -5,6 +5,7 @@ using NetCoreMMOServer.Physics;
 using NetCoreMMOServer.Utility;
 using System;
 using System.Buffers;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net.Sockets;
@@ -31,6 +32,7 @@ namespace NetCoreMMOServer
 
         private List<Zone> _zoneList;
         private Zone[,,] _zones;
+        private EntityDataBase?[,,] _groundEntities;
         private Dictionary<EntityInfo, EntityDataBase> _entityTable;
         //private ConcurrentPool<EntityDataBase> _entityDataBasePool;
 
@@ -69,16 +71,19 @@ namespace NetCoreMMOServer
             }
 
             _entityTable = new();
-            for(int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
+            _groundEntities = new EntityDataBase[(int)MathF.Ceiling(ZoneOption.TotalZoneWidth), (int)MathF.Ceiling(ZoneOption.TotalZoneHeight), (int)MathF.Ceiling(ZoneOption.TotalZoneDepth)];
+            for (int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
             {
                 for(int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
                 {
-                    if(!CreateEntity(EntityType.Block, out EntityDataBase entity))
+                    if(!CreateEntity(EntityType.Block, out EntityDataBase entity, new Vector3(x, -2f, z)))
                     {
                         Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
                         continue;
                     }
-                    entity.Position.Value = new Vector3(x, -2f, z);
+                    //entity.Position.Value = new Vector3(x, -2f, z);
+                    //Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+                    //_groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
                 }
             }
 
@@ -321,6 +326,34 @@ namespace NetCoreMMOServer
                     _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
                     break;
 
+                case GroundModificationPacket groundModificationPacket:
+                    Vector3Int gPos = groundModificationPacket.Position;
+                    Vector3Int gGridPos = gPos + new Vector3Int(ZoneOption.TotalZoneHalfSize);
+                    EntityDataBase? gBlock = _groundEntities[gGridPos.X, gGridPos.Y, gGridPos.Z];
+                    if (groundModificationPacket.IsCreate)
+                    {
+                        if (gBlock == null)
+                        {
+                            if(!CreateEntity(EntityType.Block, out var entity, new Vector3(gPos.X, gPos.Y, gPos.Z)))
+                            {
+                                Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (gBlock != null)
+                        {
+                            if (!ReleaseEntity(gBlock))
+                            {
+                                Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                                break;
+                            }
+                        }
+                    }
+                    break;
+
                 default:
                     Console.WriteLine("Error:: Not Found Packet Protocol!!");
                     break;
@@ -368,12 +401,17 @@ namespace NetCoreMMOServer
                     Console.WriteLine($"Log:: Success!! => _userIdDictionary.TryAdd({user.ID}, {user})");
                 }
                 _userList.Add(user);
-                user.LinkEntity(new PlayerEntity());
-                if (!_entityTable.TryAdd(user.LinkedEntity!.EntityInfo, user.LinkedEntity))
+                if(!CreateEntity(EntityType.Player, out var player, Vector3.Zero))
                 {
-                    Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({user.LinkedEntity.EntityInfo}, {user.LinkedEntity})");
+                    Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
                     continue;
                 }
+                user.LinkEntity(player);
+                //if (!_entityTable.TryAdd(user.LinkedEntity!.EntityInfo, user.LinkedEntity))
+                //{
+                //    Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({user.LinkedEntity.EntityInfo}, {user.LinkedEntity})");
+                //    continue;
+                //}
                 _setLinkedEntityPacket.EntityInfo = user.LinkedEntity!.EntityInfo;
                 MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(user.PacketBufferWriter, _setLinkedEntityPacket);
             }
@@ -424,15 +462,19 @@ namespace NetCoreMMOServer
             disconnectUserList.Clear();
         }
 
-        private bool CreateEntity(EntityType entityType, out EntityDataBase entity)
+        private bool CreateEntity(EntityType entityType, out EntityDataBase entity, Vector3 position)
         {
             switch(entityType)
             {
                 case EntityType.Player:
                     entity = new PlayerEntity();
+                    entity.Position.Value = position;
                     break;
                 case EntityType.Block:
                     entity = new BlockEntity();
+                    entity.Position.Value = position;
+                    Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+                    _groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
                     break;
 
                 default:
@@ -444,6 +486,32 @@ namespace NetCoreMMOServer
                 Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({entity.EntityInfo}, {entity})");
                 return false;
             }
+
+            return true;
+        }
+
+        private bool ReleaseEntity(EntityDataBase entity)
+        {
+            switch (entity.EntityType)
+            {
+                case EntityType.Player:
+                    break;
+                case EntityType.Block:
+                    Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+                    _groundEntities[gPos.X, gPos.Y, gPos.Z] = null;
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+
+            if (!_entityTable.Remove(entity.EntityInfo))
+            {
+                Console.WriteLine($"Error:: Failed!! => _entityTable.TryAdd({entity.EntityInfo}, {entity})");
+                return false;
+            }
+
+            entity.CurrentZone.Value?.RemoveEntity(entity);
 
             return true;
         }

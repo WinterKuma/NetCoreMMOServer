@@ -1,4 +1,6 @@
-﻿namespace NetCoreMMOServer.Utility
+﻿using System.Numerics;
+
+namespace NetCoreMMOServer.Utility
 {
     public partial struct Vector2Int : IEquatable<Vector2Int>
     {
@@ -95,6 +97,13 @@
             X = (int)x;
             Y = (int)y;
             Z = (int)z;
+        }
+
+        public Vector3Int(Vector3 v)
+        {
+            X = (int)v.X;
+            Y = (int)v.Y;
+            Z = (int)v.Z;
         }
 
         public static Vector3Int operator +(Vector3Int lhs, Vector3Int rhs)

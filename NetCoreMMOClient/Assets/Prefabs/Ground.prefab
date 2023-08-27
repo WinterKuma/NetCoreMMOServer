@@ -125,7 +125,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6204621385088542026}
   - component: {fileID: 5990592594086930043}
-  m_Layer: 0
+  - component: {fileID: 7507696447625357508}
+  m_Layer: 10
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -163,5 +164,22 @@ MonoBehaviour:
   <NetObjectID>k__BackingField: 1000
   <IsMine>k__BackingField: 0
   _moveSpeed: 3
-  renderer: {fileID: 0}
-  mineMaterial: {fileID: 2100000, guid: b7e438eaa79db7c4ca9a4918c7cc7a57, type: 2}
+  _jumpPower: 6
+  _jumpTimer: 0
+  _renderer: {fileID: 0}
+  _mineMaterial: {fileID: 0}
+  _screenRotateSpeedX: 1
+  _screenRotateSpeedY: 1
+--- !u!65 &7507696447625357508
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5784468944449105544}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

@@ -32,6 +32,10 @@ namespace NetCoreMMOServer.Network
                     case 2:
                         packet = PacketPool.Get<SetLinkedEntityPacket>();
                         break;
+                    case 3:
+                        packet = PacketPool.Get<GroundModificationPacket>();
+                        break;
+
                     default:
                         return false;
                 }

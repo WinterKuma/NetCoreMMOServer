@@ -9,6 +9,7 @@ namespace NetCoreMMOServer.Packet
     [MemoryPackable]
     [MemoryPackUnion(1, typeof(EntityDataTable))]
     [MemoryPackUnion(2, typeof(SetLinkedEntityPacket))]
+    [MemoryPackUnion(3, typeof(GroundModificationPacket))]
     public partial interface IMPacket
     {
         //[MemoryPackOnDeserializing]
@@ -154,5 +155,12 @@ namespace NetCoreMMOServer.Packet
     public partial class SetLinkedEntityPacket : IMPacket
     {
         public EntityInfo EntityInfo { get; set; }
+    }
+
+    [MemoryPackable]
+    public partial class GroundModificationPacket : IMPacket
+    {
+        public Vector3Int Position { get; set; }
+        public bool IsCreate { get; set; }
     }
 }

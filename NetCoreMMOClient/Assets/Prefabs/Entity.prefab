@@ -177,5 +177,9 @@ MonoBehaviour:
   <NetObjectID>k__BackingField: 1000
   <IsMine>k__BackingField: 0
   _moveSpeed: 3
-  renderer: {fileID: 1023503345539130648}
-  mineMaterial: {fileID: 2100000, guid: b7e438eaa79db7c4ca9a4918c7cc7a57, type: 2}
+  _jumpPower: 6
+  _jumpTimer: 0
+  _renderer: {fileID: 1023503345539130648}
+  _mineMaterial: {fileID: 2100000, guid: b7e438eaa79db7c4ca9a4918c7cc7a57, type: 2}
+  _screenRotateSpeedX: 8
+  _screenRotateSpeedY: 8
