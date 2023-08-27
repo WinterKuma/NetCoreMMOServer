@@ -139,7 +139,7 @@ public class Entity : MonoBehaviour
 
     public void MouseUpdate()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
         RaycastHit hitData;
         if (Physics.Raycast(ray, out hitData, 1000, _groundBoxLayerMask))
         {
@@ -156,7 +156,7 @@ public class Entity : MonoBehaviour
             else if (Input.GetMouseButtonDown(1))
             {
                 _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position);
-                _groundModificationPacket.IsCreate = false;
+                _groundModificationPacket.IsCreate = false; 
                 Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
             }
         }

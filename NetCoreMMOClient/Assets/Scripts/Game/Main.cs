@@ -34,6 +34,9 @@ public class Main : MonoBehaviour
         _client = new();
         _client.Received += pushPacket;
         _client.OnConnect(new IPEndPoint(IPAddress.Parse(ip), port));
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     // Update is called once per frame
