@@ -1,4 +1,5 @@
-﻿using NetCoreMMOServer.Packet;
+﻿using NetCoreMMOServer.Network.Components.Contents;
+using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Physics;
 using System.Numerics;
 
@@ -7,12 +8,14 @@ namespace NetCoreMMOServer.Network
     // preview
     public partial class PlayerEntity : EntityDataBase
     {
-        public SyncData<int> power = new(1);
-        public SyncData<int> hp = new(10);
+        public SyncData<int> Power = new(1);
+        public SyncData<int> Hp = new(10);
     }
 
     public partial class PlayerEntity : EntityDataBase
     {
+        public Inventory Inventory;
+
         public PlayerEntity() : base(EntityType.Player)
         {
             //_syncDatas.Add(power);
@@ -27,8 +30,17 @@ namespace NetCoreMMOServer.Network
             rigidBody.SetEntityDataBase(this);
             collider.SetEntityDataBase(this);
 
+            Inventory = new(9);
+
             components.Add(rigidBody);
             components.Add(collider);
+            //components.Add(inventory);
+
+            foreach(var item in Inventory.Items)
+            {
+                _syncDatas.Add(item);
+            }
+            Inventory.Items[0].Value = new Item() { code = ItemCode.Block, count = 10 }.buffer;
 
             Init(EntityInfo);
         }
@@ -74,7 +86,7 @@ namespace NetCoreMMOServer.Network
         public SyncData<Vector3> Velocity = new(new Vector3(0.0f, 0.0f, 0.0f));
 
         // Component System
-        public List<Component.Component> components;
+        public List<Components.Component> components;
 
         public EntityDataBase(EntityType entityType = EntityType.None)
         {
@@ -102,6 +114,7 @@ namespace NetCoreMMOServer.Network
 
         /// <summary>
         /// pool에서 가져올 경우, 초기화에서만 사용할 것
+        /// Override를 통해서 하위에서 초기화하는 내용도 추가해야함.
         /// </summary>
         /// <param name="entityInfo"></param>
         public void Init(EntityInfo entityInfo)

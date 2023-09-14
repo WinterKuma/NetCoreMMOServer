@@ -115,7 +115,7 @@ public class Main : MonoBehaviour
     public Entity CreateEntity(EntityDataTable entityDataTable)
     {
         GameObject obj = null;
-        switch(entityDataTable.EntityInfo.EntityType)
+        switch (entityDataTable.EntityInfo.EntityType)
         {
             case EntityType.Player:
                 obj = EntityPrefab;
@@ -131,7 +131,19 @@ public class Main : MonoBehaviour
         Entity entity = Instantiate(obj, Vector3.zero, Quaternion.identity).GetComponent<Entity>();
         entity.IsMine = _entityInfo.EntityID == entityDataTable.EntityInfo.EntityID;
         entity.NetObjectID = (int)entityDataTable.EntityInfo.EntityID;
-        entity.EntityData = new EntityDataBase();
+
+        switch (entityDataTable.EntityInfo.EntityType)
+        {
+            case EntityType.Player:
+                entity.EntityData = new PlayerEntity();
+                break;
+            case EntityType.Block:
+                entity.EntityData = new EntityDataBase();
+                break;
+
+            default:
+                throw new Exception();
+        }
         entity.EntityData.Init(entityDataTable.EntityInfo);
         return entity;
     }

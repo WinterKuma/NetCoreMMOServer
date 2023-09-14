@@ -1,4 +1,4 @@
-﻿using NetCoreMMOServer.Network.Component;
+﻿using NetCoreMMOServer.Network.Components;
 using System.Numerics;
 
 namespace NetCoreMMOServer.Physics

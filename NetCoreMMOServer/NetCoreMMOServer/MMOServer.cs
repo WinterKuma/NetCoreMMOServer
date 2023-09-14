@@ -1,5 +1,6 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Network;
+using NetCoreMMOServer.Network.Components.Contents;
 using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Physics;
 using NetCoreMMOServer.Utility;
@@ -126,7 +127,7 @@ namespace NetCoreMMOServer
                     if (packetQueue.TryDequeue(out var packet))
                     {
                         //packet.Item2?.LinkedEntity?.CurrentZone.Value?.PacketQueue.Enqueue(packet);
-                        ProcessPacket(packet.Item1);
+                        ProcessPacket(packet.Item1, packet.Item2);
                         PacketPool.ReturnPacket(packet.Item1);
                     }
                 }
@@ -313,7 +314,7 @@ namespace NetCoreMMOServer
             }
         }
 
-        private void ProcessPacket(in IMPacket packet)
+        private void ProcessPacket(in IMPacket packet, in User user)
         {
             switch (packet)
             {
@@ -334,10 +335,22 @@ namespace NetCoreMMOServer
                     {
                         if (gBlock == null)
                         {
-                            if(!CreateEntity(EntityType.Block, out var entity, new Vector3(gPos.X, gPos.Y, gPos.Z)))
+                            if(user.LinkedEntity is PlayerEntity player)
                             {
-                                Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
-                                break;
+                                if(player.Inventory.GetItemCount(ItemCode.Block) <= 0)
+                                {
+                                    break;
+                                }
+
+                                if (!CreateEntity(EntityType.Block, out var entity, new Vector3(gPos.X, gPos.Y, gPos.Z)))
+                                {
+                                    Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                                    break;
+                                }
+                                else
+                                {
+                                    player.Inventory.RemoveItem(ItemCode.Block, 1);
+                                }
                             }
                         }
                     }
@@ -349,6 +362,16 @@ namespace NetCoreMMOServer
                             {
                                 Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
                                 break;
+                            }
+                            else
+                            {
+                                if(user.LinkedEntity is PlayerEntity player)
+                                {
+                                    if(player.Inventory.AddItem(ItemCode.Block, 1))
+                                    {
+
+                                    }
+                                }
                             }
                         }
                     }

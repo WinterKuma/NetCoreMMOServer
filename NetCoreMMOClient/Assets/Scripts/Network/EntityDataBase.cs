@@ -1,3 +1,4 @@
+
 using NetCoreMMOServer.Packet;
 using System;
 using System.Collections.Generic;
@@ -13,14 +14,14 @@ namespace NetCoreMMOServer.Network
         private EntityDataTable _initDataTablePacket;
         private EntityDataTable _updateDataTablePacket;
         private EntityDataTable _disposeDataTablePacket;
-        private List<ISyncData> _syncDatas;
+        protected List<ISyncData> _syncDatas;
 
         // Base Param
         public SyncData<bool> IsActive { get; set; } = new(true);
         public SyncData<Vector3> Position { get; set; } = new(new Vector3(0.0f, 0.0f, 0.0f));
         public SyncData<Vector3> Velocity { get; set; } = new(new Vector3(0.0f, 0.0f, 0.0f));
 
-        public EntityDataBase()
+        public EntityDataBase(EntityType entityType = EntityType.None)
         {
             _entityInfo.EntityID = ++s_MaxEntityID;
 
