@@ -96,6 +96,18 @@ namespace NetCoreMMOServer.Packet
         public void SetValue(ISyncData syncData);
     }
 
+    public enum BlockType : byte
+    {
+        None = 0,
+        Block = 1,
+    }
+
+    [MemoryPackable]
+    public partial class ZoneChunk
+    {
+        public BlockType[,,] chunks = new BlockType[3, 3, 3];
+    }
+
     public enum EntityType : byte
     {
         None = 0,

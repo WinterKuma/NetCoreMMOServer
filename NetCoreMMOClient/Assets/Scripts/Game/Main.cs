@@ -26,6 +26,10 @@ public class Main : MonoBehaviour
     private static string ip = "127.0.0.1";
     private static int port = 8080;
 
+    //UI
+    [SerializeField]
+    private UIInventory _uiInventory;
+
     // Start is called before the first frame update
     void Awake()
     {
@@ -75,6 +79,7 @@ public class Main : MonoBehaviour
         if (_entityDictionary.ContainsKey(entityInfo))
         {
             _linkedEntity = _entityDictionary[entityInfo];
+            _uiInventory.SetPlayerEntity(_linkedEntity);
         }
     }
 

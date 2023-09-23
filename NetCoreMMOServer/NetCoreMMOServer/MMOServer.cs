@@ -4,13 +4,13 @@ using NetCoreMMOServer.Network.Components.Contents;
 using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Physics;
 using NetCoreMMOServer.Utility;
-using System;
 using System.Buffers;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO.Pipelines;
+using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Numerics;
+using System.Text;
 
 namespace NetCoreMMOServer
 {
@@ -41,6 +41,7 @@ namespace NetCoreMMOServer
         private SetLinkedEntityPacket _setLinkedEntityPacket;
 
         private Simulator _physiscSimulator;
+        private HttpClient _httpClient;
 
         public MMOServer(int port)
         {
@@ -58,9 +59,9 @@ namespace NetCoreMMOServer
 
             _zoneList = new List<Zone>(ZoneOption.ZoneCountX * ZoneOption.ZoneCountY * ZoneOption.ZoneCountZ);
             _zones = new Zone[ZoneOption.ZoneCountX, ZoneOption.ZoneCountY, ZoneOption.ZoneCountZ];
-            for(int x = 0; x < ZoneOption.ZoneCountX; ++x)
+            for (int x = 0; x < ZoneOption.ZoneCountX; ++x)
             {
-                for(int y = 0; y < ZoneOption.ZoneCountY; ++y)
+                for (int y = 0; y < ZoneOption.ZoneCountY; ++y)
                 {
                     for (int z = 0; z < ZoneOption.ZoneCountZ; ++z)
                     {
@@ -73,32 +74,78 @@ namespace NetCoreMMOServer
 
             _entityTable = new();
             _groundEntities = new EntityDataBase[(int)MathF.Ceiling(ZoneOption.TotalZoneWidth), (int)MathF.Ceiling(ZoneOption.TotalZoneHeight), (int)MathF.Ceiling(ZoneOption.TotalZoneDepth)];
-            for (int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
-            {
-                for(int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
-                {
-                    if(!CreateEntity(EntityType.Block, out EntityDataBase entity, new Vector3(x, -2f, z)))
-                    {
-                        Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
-                        continue;
-                    }
-                    //entity.Position.Value = new Vector3(x, -2f, z);
-                    //Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
-                    //_groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
-                }
-            }
+
+            //for (int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
+            //{
+            //    for (int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
+            //    {
+            //        if (!CreateEntity(EntityType.Block, out EntityDataBase entity, new Vector3(x, -2f, z)))
+            //        {
+            //            Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+            //            continue;
+            //        }
+            //        //entity.Position.Value = new Vector3(x, -2f, z);
+            //        //Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+            //        //_groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
+            //    }
+            //}
+            _httpClient = new HttpClient() { BaseAddress = new Uri("https://localhost:7251") };
 
             _setLinkedEntityPacket = new();
 
             _physiscSimulator = new();
         }
 
-        public void Start(int backlog = (int)SocketOptionName.MaxConnections)
+        public async Task StartAsync(int backlog = (int)SocketOptionName.MaxConnections)
         {
             _server = new(_port);
             _server.Accepted += AcceptAsync;
             _server.Start(backlog);
-            Update();
+
+            CommandAsync();
+
+            foreach (var zone in _zones)
+            {
+                await LoadZoneDB(zone.ZoneCoord);
+            }
+
+            try
+            {
+                Update();
+            }
+            catch (Exception ex)
+            {
+                
+            }
+            finally
+            {
+                foreach (var zone in _zones)
+                {
+                    SaveZoneDB(zone.ZoneCoord);
+                }
+            }
+        }
+
+        public async Task CommandAsync()
+        {
+            await Task.Run(async () =>
+            {
+                while (true)
+                {
+                    if (Console.KeyAvailable)
+                    {
+                        ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
+                        Console.WriteLine($"눌린 키: {keyInfo.Key}");
+                        if (keyInfo.Key == ConsoleKey.S)
+                        {
+                            foreach (var zone in _zones)
+                            {
+                                await SaveZoneDB(zone.ZoneCoord);
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         private void Update()
@@ -167,13 +214,13 @@ namespace NetCoreMMOServer
                 //}
                 //
                 //_physiscSimulator.Update(dt);
-                
+
                 Parallel.ForEach(_zoneList,
                     zone =>
                     {
                         zone.FixedUpdate(dt);
                     });
-                
+
                 for (int i = 0; i < PhysicsOption.StepCount; i++)
                 {
                     Parallel.ForEach(_zoneList,
@@ -187,7 +234,7 @@ namespace NetCoreMMOServer
                 ProcessDisconnectUser();
 
                 // Update Zone (with. Entity)
-                foreach(var entity in _entityTable.Values)
+                foreach (var entity in _entityTable.Values)
                 {
                     SetZone(entity);
                 }
@@ -206,11 +253,11 @@ namespace NetCoreMMOServer
                 }
 
                 // Reset And Backup Zone EntityList
-                foreach(var zone in _zones)
+                foreach (var zone in _zones)
                 {
                     zone.ResetAndBackupEntityList();
                 }
-                
+
                 // Sleep MainLoop Thread
                 if (st.ElapsedMilliseconds < 100)
                 {
@@ -319,7 +366,7 @@ namespace NetCoreMMOServer
             switch (packet)
             {
                 case EntityDataTable entityDataTablePacket:
-                    if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
+                    if (!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
                     {
                         Console.WriteLine($"Error:: Not Contain EntityInfo {entityDataTablePacket.EntityInfo.EntityID}");
                         break;
@@ -335,9 +382,9 @@ namespace NetCoreMMOServer
                     {
                         if (gBlock == null)
                         {
-                            if(user.LinkedEntity is PlayerEntity player)
+                            if (user.LinkedEntity is PlayerEntity player)
                             {
-                                if(player.Inventory.GetItemCount(ItemCode.Block) <= 0)
+                                if (player.Inventory.GetItemCount(ItemCode.Block) <= 0)
                                 {
                                     break;
                                 }
@@ -365,9 +412,9 @@ namespace NetCoreMMOServer
                             }
                             else
                             {
-                                if(user.LinkedEntity is PlayerEntity player)
+                                if (user.LinkedEntity is PlayerEntity player)
                                 {
-                                    if(player.Inventory.AddItem(ItemCode.Block, 1))
+                                    if (player.Inventory.AddItem(ItemCode.Block, 1))
                                     {
 
                                     }
@@ -424,7 +471,7 @@ namespace NetCoreMMOServer
                     Console.WriteLine($"Log:: Success!! => _userIdDictionary.TryAdd({user.ID}, {user})");
                 }
                 _userList.Add(user);
-                if(!CreateEntity(EntityType.Player, out var player, Vector3.Zero))
+                if (!CreateEntity(EntityType.Player, out var player, Vector3.Zero))
                 {
                     Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
                     continue;
@@ -469,7 +516,7 @@ namespace NetCoreMMOServer
             {
                 if (user.LinkedEntity != null)
                 {
-                    if(!_entityTable.Remove(user.LinkedEntity.EntityInfo))
+                    if (!_entityTable.Remove(user.LinkedEntity.EntityInfo))
                     {
                         Console.WriteLine($"Error:: Failed!! => _entityTable.Remove({user.LinkedEntity.EntityInfo.EntityID})");
                         continue;
@@ -487,7 +534,7 @@ namespace NetCoreMMOServer
 
         private bool CreateEntity(EntityType entityType, out EntityDataBase entity, Vector3 position)
         {
-            switch(entityType)
+            switch (entityType)
             {
                 case EntityType.Player:
                     entity = new PlayerEntity();
@@ -539,6 +586,16 @@ namespace NetCoreMMOServer
             return true;
         }
 
+        public Vector3 GetZonePosition(Vector3Int zoneCoord)
+        {
+            return new Vector3(zoneCoord.X, zoneCoord.Y, zoneCoord.Z) * ZoneOption.ZoneSize - (ZoneOption.ZoneCountXYZ - Vector3.One) * ZoneOption.ZoneSize * 0.5f;
+        }
+
+        public Zone GetZone(Vector3Int zoneCoord)
+        {
+            return _zones[zoneCoord.X, zoneCoord.Y, zoneCoord .Z];
+        }
+
         private void SetZone(EntityDataBase entity)
         {
             Vector3 pos = entity.Position.Value;
@@ -562,6 +619,119 @@ namespace NetCoreMMOServer
             int y = Math.Clamp((int)((pos.Y + ZoneOption.TotalZoneHalfHeight) * ZoneOption.InverseZoneHeight), 0, ZoneOption.ZoneCountY - 1);
             int z = Math.Clamp((int)((pos.Z + ZoneOption.TotalZoneHalfDepth) * ZoneOption.InverseZoneDepth), 0, ZoneOption.ZoneCountZ - 1);
             entity.MoveZone(_zones[x, y, z]);
+        }
+
+        private async Task LoadZoneDB(Vector3Int zoneCoord)
+        {
+            Zone zone = GetZone(zoneCoord);
+
+            using (var response = await _httpClient.GetAsync($"Chunks?id={zone.ZoneID}"))
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var jsonContent = await response.Content.ReadFromJsonAsync<ZoneDTO>();
+                    ReadOnlyMemory<byte> buffer = Encoding.UTF8.GetBytes(jsonContent.ChunkBinary);
+                    ZoneChunk zoneChunk = _zones[zoneCoord.X, zoneCoord.Y, zoneCoord.Z].ZoneChunk;
+                    MemoryPackSerializer.Deserialize<ZoneChunk>(buffer.Span, ref zoneChunk!);
+                    Vector3 zonePosition = GetZonePosition(zoneCoord);
+                    for (int i = 0; i < ZoneOption.ZoneWidth; i++)
+                    {
+                        for (int j = 0; j < ZoneOption.ZoneHeight; j++)
+                        {
+                            for (int k = 0; k < ZoneOption.ZoneWidth; k++)
+                            {
+                                if (zoneChunk.chunks[i, j, k] == BlockType.Block)
+                                {
+                                    Vector3 blockPosition = zonePosition + new Vector3(i, j, k) - ZoneOption.ZoneSize * 0.5f + Vector3.One * 0.5f;
+                                    if (!CreateEntity(EntityType.Block, out _, blockPosition))
+                                    {
+                                        Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    await CreateZoneDB(zoneCoord);
+                }
+            }
+        }
+
+        private async Task SaveZoneDB(Vector3Int zoneCoord)
+        {
+            Zone zone = GetZone(zoneCoord);
+
+            using (var response = await _httpClient.PutAsJsonAsync($"Chunks?id={zone.ZoneID}", zone.GetZoneDTO()))
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    //var jsonContent = await response.Content.ReadFromJsonAsync<ZoneDTO>();
+                }
+            }
+        }
+
+        private async Task CreateZoneDB(Vector3Int zoneCoord)
+        {
+            Zone zone = GetZone(zoneCoord);
+            
+            ZoneChunk zoneChunk = zone.ZoneChunk;
+
+            if (zoneCoord.Y == 0)
+            {
+                for (int i = 0; i < ZoneOption.ZoneWidth; i++)
+                {
+                    for (int j = 0; j < ZoneOption.ZoneHeight; j++)
+                    {
+                        for (int k = 0; k < ZoneOption.ZoneWidth; k++)
+                        {
+                            zoneChunk.chunks[i, j, k] = BlockType.Block;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ZoneOption.ZoneWidth; i++)
+                {
+                    for (int j = 0; j < ZoneOption.ZoneHeight; j++)
+                    {
+                        for (int k = 0; k < ZoneOption.ZoneWidth; k++)
+                        {
+                            zoneChunk.chunks[i, j, k] = BlockType.None;
+                        }
+                    }
+                }
+            }
+
+            using (var response = await _httpClient.PostAsJsonAsync($"Chunks", zone.GetZoneDTO()))
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var jsonContent = await response.Content.ReadFromJsonAsync<ZoneDTO>();
+                    ReadOnlyMemory<byte> buffer = Encoding.UTF8.GetBytes(jsonContent.ChunkBinary);
+                    MemoryPackSerializer.Deserialize<ZoneChunk>(buffer.Span, ref zoneChunk!);
+                    Vector3 zonePosition = GetZonePosition(zoneCoord);
+                    for (int i = 0; i < ZoneOption.ZoneWidth; i++)
+                    {
+                        for (int j = 0; j < ZoneOption.ZoneHeight; j++)
+                        {
+                            for (int k = 0; k < ZoneOption.ZoneWidth; k++)
+                            {
+                                if (zoneChunk.chunks[i, j, k] == BlockType.Block)
+                                {
+                                    Vector3 blockPosition = zonePosition + new Vector3(i, j, k) - ZoneOption.ZoneSize * 0.5f + Vector3.One * 0.5f;
+                                    if (!CreateEntity(EntityType.Block, out _, blockPosition))
+                                    {
+                                        Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

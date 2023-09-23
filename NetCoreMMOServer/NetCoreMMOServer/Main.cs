@@ -4,10 +4,10 @@ namespace NetCoreMMOServer
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             MMOServer server = new(8080);
-            server.Start();
+            await server.StartAsync();
 
             while (true) { }
         }

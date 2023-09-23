@@ -14,11 +14,12 @@ namespace NetCoreMMOServer.Network.Components.Contents
     public struct Item
     {
         [FieldOffset(0)]
+        public int buffer;
+
+        [FieldOffset(0)]
         public ItemCode code;
         [FieldOffset(2)]
         public short count;
-        [FieldOffset(0)]
-        public int buffer;
     }
 
     public class Inventory : Component
@@ -147,11 +148,6 @@ namespace NetCoreMMOServer.Network.Components.Contents
             Item item = new Item();
             item.buffer = buffer;
             return item;
-        }
-
-        public static int GetBuffer(this in Item item)
-        {
-            return item.buffer;
         }
     }
 }

@@ -1,9 +1,47 @@
-﻿using NetCoreMMOServer.Packet;
+﻿using MemoryPack;
+using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Physics;
 using NetCoreMMOServer.Utility;
+using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace NetCoreMMOServer.Network
 {
+    [StructLayout(LayoutKind.Explicit)]
+    public struct ZoneID
+    {
+        [FieldOffset(0)]
+        public int buffer;
+
+        [FieldOffset(0)]
+        public byte x;
+        [FieldOffset(1)]
+        public byte y;
+        [FieldOffset(2)]
+        public byte z;
+        [FieldOffset(3)]
+        public byte w;
+
+        public void SetZoneID(Vector3Int zoneCoord)
+        {
+            x = (byte)zoneCoord.X;
+            y = (byte)zoneCoord.Y;
+            z = (byte)zoneCoord.Z;
+        }
+
+        public void SetZoneID(int x, int y, int z, int w)
+        {
+            x = (byte)x;
+            y = (byte)y;
+            z = (byte)z;
+            w = (byte)w;
+        }
+    }
+
+    public record struct ZoneDTO(int Id, string ChunkBinary);
+
     public class Zone
     {
         private int _zoneID;
@@ -21,6 +59,9 @@ namespace NetCoreMMOServer.Network
         private Vector3Int _minZoneCoord;
         private Vector3Int _maxZoneCoord;
 
+        private PacketBufferWriter _chunkBufferWriter;
+        private ZoneChunk _zoneChunk;
+
         public int ZoneID => _zoneID;
         public Vector3Int ZoneCoord => _zoneCoord;
         public Zone[,,] ZoneGridPointer => _zoneGridPointer;
@@ -29,6 +70,8 @@ namespace NetCoreMMOServer.Network
         public List<EntityDataBase> CurrentEntities => _currentEntities;
         public List<EntityDataBase> AddEntities => _addEntities;
         public List<EntityDataBase> RemoveEntities => _removeEntities;
+        public ZoneChunk ZoneChunk => _zoneChunk;
+        public Vector3 ZonePosition => new Vector3(_zoneCoord.X, _zoneCoord.Y, _zoneCoord.Z) * ZoneOption.ZoneSize - (ZoneOption.ZoneCountXYZ - Vector3.One) * ZoneOption.ZoneSize * 0.5f;
 
         //public List<EntityDataBase> AddAroundEntities => _aroundEntities;
 
@@ -38,11 +81,14 @@ namespace NetCoreMMOServer.Network
             _zoneGridPointer = ZoneGridPointer;
             _packetQueue = new Queue<(IMPacket, User)> ();
             _physicsSimulator = new(this);
+            _chunkBufferWriter = new(new byte[0xffff]);
+            _zoneChunk = new ZoneChunk();
         }
 
         public void Init(Vector3Int zoneCoord)
         {
-            _zoneID = (zoneCoord.X * 10000 + zoneCoord.Y * 100 + zoneCoord.Z);
+            //_zoneID = new ZoneID() { x = (byte)zoneCoord.X, y = (byte)zoneCoord.Y, z = (byte)zoneCoord.Z };
+            _zoneID = (zoneCoord.X + 1) * 1000 * 1000 + (zoneCoord.Y + 1) * 1000 + (zoneCoord.Z + 1);
             _zoneCoord = zoneCoord;
             _currentEntities.Clear();
             _minZoneCoord = new Vector3Int(Math.Max(0, _zoneCoord.X - 1), Math.Max(0, _zoneCoord.Y - 1), Math.Max(0, _zoneCoord.Z - 1));
@@ -114,6 +160,42 @@ namespace NetCoreMMOServer.Network
             {
                 _oldEntities.Add(entity);
             }
+        }
+
+        public ZoneDTO GetZoneDTO()
+        {
+            ZoneDTO zoneDTO = new ZoneDTO();
+            zoneDTO.Id = _zoneID;
+
+            for(int i = 0; i < 3; i++)
+            {
+                for(int j = 0; j < 3; j++)
+                {
+                    for(int k = 0; k < 3; k++)
+                    {
+                        _zoneChunk.chunks[i, j, k] = BlockType.None;
+                    }
+                }
+            }
+
+            foreach(var entity in _currentEntities)
+            {
+                if(entity.EntityType == EntityType.Block)
+                {
+                    Vector3 blockPosition = entity.Position.Value - ZonePosition + (ZoneOption.ZoneSize - Vector3.One) * 0.5f;
+                    Vector3Int blockCoord = new Vector3Int(blockPosition);
+                    _zoneChunk.chunks[blockCoord.X, blockCoord.Y, blockCoord.Z] = BlockType.Block;
+                }
+            }
+            MemoryPackSerializer.Serialize<ZoneChunk, PacketBufferWriter>(_chunkBufferWriter, _zoneChunk);
+            zoneDTO.ChunkBinary = Encoding.UTF8.GetString(_chunkBufferWriter.GetFilledMemory().Span);
+
+            return zoneDTO;
+        }
+
+        public Vector3 GetZonePosition(Vector3Int zoneCoord)
+        {
+            return new Vector3(zoneCoord.X, zoneCoord.Y, zoneCoord.Z) * ZoneOption.ZoneSize - (ZoneOption.ZoneCountXYZ - Vector3.One) * ZoneOption.ZoneSize * 0.5f;
         }
     }
 }

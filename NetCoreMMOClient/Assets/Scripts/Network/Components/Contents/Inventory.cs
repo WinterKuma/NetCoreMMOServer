@@ -100,8 +100,9 @@ public class Inventory
         return false;
     }
 
-    public Item GetItem(ItemCode code)
+    public int GetItemCount(ItemCode code)
     {
+        int itemCount = 0;
         Item itemBuffer = new Item();
 
         foreach (SyncData<int> item in items)
@@ -109,13 +110,11 @@ public class Inventory
             itemBuffer.buffer = item.Value;
             if (itemBuffer.code == code)
             {
-                return itemBuffer;
+                itemCount += itemBuffer.count;
             }
         }
 
-        itemBuffer.code = ItemCode.None;
-        itemBuffer.count = 0;
-        return itemBuffer;
+        return itemCount;
     }
 }
 

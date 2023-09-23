@@ -5,10 +5,11 @@ namespace NetCoreMMOServer
 {
     public static class ZoneOption
     {
-        public static readonly int ZoneCountX = 7;
-        public static readonly int ZoneCountY = 7;
-        public static readonly int ZoneCountZ = 7;
-        public static readonly Vector3Int ZoneCountXYZ = new Vector3Int(ZoneCountX, ZoneCountY, ZoneCountZ);
+        public static readonly int ZoneCountX = 5;
+        public static readonly int ZoneCountY = 3;
+        public static readonly int ZoneCountZ = 5;
+        public static readonly Vector3Int ZoneCountXYZInt = new Vector3Int(ZoneCountX, ZoneCountY, ZoneCountZ);
+        public static readonly Vector3 ZoneCountXYZ = new Vector3(ZoneCountX, ZoneCountY, ZoneCountZ);
 
         public static readonly float ZoneWidth = 3.0f;
         public static readonly float ZoneHeight = 3.0f;
