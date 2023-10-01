@@ -5,8 +5,11 @@ namespace NetCoreMMOServer.Physics
 {
     public class Simulator
     {
-        private List<Collider> _colliders;
-        private List<RigidBody> _rigidBodies;
+        protected List<Collider> _colliders;
+        protected List<RigidBody> _rigidBodies;
+
+        private int _stepCount = 10;
+        private float _invStepCount = 0.1f;
 
         public Simulator()
         {
@@ -14,28 +17,45 @@ namespace NetCoreMMOServer.Physics
             _rigidBodies = new List<RigidBody>();
         }
 
+        public int StepCount
+        {
+            get { return _stepCount; }
+            set 
+            { 
+                _stepCount = value;
+                _invStepCount = 1.0f / value;
+            }
+        }
+
+        public float invStepCount => _invStepCount;
+
         public void ResetEntity()
         {
             _colliders.Clear();
             _rigidBodies.Clear();
         }
 
-        public void AddEntity(EntityDataBase entity)
+        public void AddCollider(Collider collider)
         {
-            foreach(var component in entity.components)
-            {
-                if (component is Collider collider)
-                {
-                    _colliders.Add(collider);
-                }
-                if (component is RigidBody rigidbody)
-                {
-                    _rigidBodies.Add(rigidbody);
-                }
-            }
+            _colliders.Add(collider);
         }
 
-        public void Update(float dt)
+        public bool RemoveCollider(Collider collider)
+        {
+            return _colliders.Remove(collider);
+        }
+
+        public void AddRigidBody(RigidBody rigidBody)
+        {
+            _rigidBodies.Add(rigidBody);
+        }
+
+        public bool RemoveRigidBody(RigidBody rigidBody)
+        {
+            return _rigidBodies.Remove(rigidBody);
+        }
+
+        public virtual void Update(float dt)
         {
             foreach (var rigidBody in _rigidBodies)
             {
@@ -45,35 +65,34 @@ namespace NetCoreMMOServer.Physics
                 }
                 // gravity
                 float gravity = rigidBody.Velocity.Y;
-                rigidBody.Velocity = rigidBody.Owner.Velocity.Value;
-                //rigidBody.Velocity += new Vector3(0.0f, gravity + -9.81f * dt, 0.0f);
-                if(rigidBody.Owner.Velocity.Value.Y == 0.0f)
+                rigidBody.PrevVelcotiy = rigidBody.Velocity;
+                rigidBody.Velocity = rigidBody.NextVelocity;
+                if(rigidBody.Velocity.Y == 0.0f)
                 {
-                    //rigidBody.Velocity += new Vector3(0.0f, gravity + -9.81f * dt, 0.0f);
                     rigidBody.Velocity += new Vector3(0.0f, gravity, 0.0f) + PhysicsOption.Gravity * dt;
                 }
                 else
                 {
-                    rigidBody.Owner.Velocity.Value = new Vector3(rigidBody.Owner.Velocity.Value.X, 0.0f, rigidBody.Owner.Velocity.Value.Z);
+                    rigidBody.Velocity = new Vector3(rigidBody.Velocity.X, 0.0f, rigidBody.Velocity.Z);
                 }
             }
 
-            for(int i = 0; i < 10; i++)
+            for(int i = 0; i < _stepCount; i++)
             {
-                Step(dt * 0.1f);
+                Step(dt * _invStepCount);
             }
         }
 
-        private void Step(float time)
+        protected virtual void Step(float time)
         {
             foreach (var rigidBody in _rigidBodies)
             {
-                if(rigidBody.IsStatic)
+                if(rigidBody.IsStatic || rigidBody.Transform == null)
                 {
                     continue;
                 }
                 // gravity
-                rigidBody.Owner.Position.Value += rigidBody.Velocity * time;
+                rigidBody.Transform.Position += rigidBody.Velocity * time;
             }
 
             for (int i = 0; i < _colliders.Count - 1; i++)
@@ -106,7 +125,7 @@ namespace NetCoreMMOServer.Physics
             }
         }
 
-        private void Solve(RigidBody? bodyA, RigidBody? bodyB, in Vector3 normal, in float depth)
+        protected void Solve(RigidBody? bodyA, RigidBody? bodyB, in Vector3 normal, in float depth)
         {
             bool bodyAStatic = bodyA?.IsStatic ?? true;
             bool bodyBStatic = bodyB?.IsStatic ?? true;
@@ -128,21 +147,21 @@ namespace NetCoreMMOServer.Physics
 
             if (bodyAStatic)
             {
-                bodyB!.Owner.Position.Value += normal * depth;
+                bodyB!.Transform!.Position += normal * depth;
                 bodyB!.Velocity += impulse * bodyB.InvMass;
             }
             else if(bodyBStatic)
             {
-                bodyA!.Owner.Position.Value += -normal * depth;
+                bodyA!.Transform!.Position += -normal * depth;
                 bodyA!.Velocity -= impulse * bodyA.InvMass;
             }
             else
             {
                 float depthAmount = depth * 0.5f;
-                bodyA!.Owner.Position.Value += -normal * depthAmount;
+                bodyA!.Transform!.Position += -normal * depthAmount;
                 bodyA!.Velocity -= impulse * bodyA.InvMass;
 
-                bodyB!.Owner.Position.Value += normal * depthAmount;
+                bodyB!.Transform!.Position += normal * depthAmount;
                 bodyB!.Velocity += impulse * bodyB.InvMass;
             }
         }

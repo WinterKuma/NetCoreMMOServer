@@ -1,4 +1,6 @@
 ﻿using MemoryPack;
+using NetCoreMMOServer.Contents.Entity;
+using NetCoreMMOServer.Framework;
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Network.Components.Contents;
 using NetCoreMMOServer.Packet;
@@ -121,7 +123,7 @@ namespace NetCoreMMOServer
             {
                 foreach (var zone in _zones)
                 {
-                    SaveZoneDB(zone.ZoneCoord);
+                    await SaveZoneDB(zone.ZoneCoord);
                 }
             }
         }
@@ -538,11 +540,11 @@ namespace NetCoreMMOServer
             {
                 case EntityType.Player:
                     entity = new PlayerEntity();
-                    entity.Position.Value = position;
+                    entity.Transform.Position = position;
                     break;
                 case EntityType.Block:
                     entity = new BlockEntity();
-                    entity.Position.Value = position;
+                    entity.Transform.Position = position;
                     Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
                     _groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
                     break;

@@ -1,4 +1,4 @@
-﻿namespace NetCoreMMOServer.Network.Components
+﻿namespace NetCoreMMOServer.Framework.Components
 {
     public class Component
     {

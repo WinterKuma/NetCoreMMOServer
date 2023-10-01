@@ -1,72 +1,9 @@
-﻿using NetCoreMMOServer.Network.Components.Contents;
-using NetCoreMMOServer.Packet;
+﻿using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Physics;
 using System.Numerics;
 
-namespace NetCoreMMOServer.Network
+namespace NetCoreMMOServer.Framework
 {
-    // preview
-    public partial class PlayerEntity : EntityDataBase
-    {
-        public SyncData<int> Power = new(1);
-        public SyncData<int> Hp = new(10);
-    }
-
-    public partial class PlayerEntity : EntityDataBase
-    {
-        public Inventory Inventory;
-
-        public PlayerEntity() : base(EntityType.Player)
-        {
-            //_syncDatas.Add(power);
-            //_syncDatas.Add(hp);
-
-            RigidBody rigidBody = new();
-            SphereCollider collider = new();
-            collider.Offset = Vector3.Zero;
-            collider.Radius = 0.5f;
-            collider.AttachedRigidbody = rigidBody;
-
-            rigidBody.SetEntityDataBase(this);
-            collider.SetEntityDataBase(this);
-
-            Inventory = new(9);
-
-            components.Add(rigidBody);
-            components.Add(collider);
-            //components.Add(inventory);
-
-            foreach(var item in Inventory.Items)
-            {
-                _syncDatas.Add(item);
-            }
-            Inventory.Items[0].Value = new Item() { code = ItemCode.Block, count = 10 }.buffer;
-
-            Init(EntityInfo);
-        }
-    }
-
-    public partial class BlockEntity : EntityDataBase
-    {
-        public BlockEntity() : base(EntityType.Block)
-        {
-            RigidBody rigidBody = new(1f, true);
-
-            CubeCollider collider = new();
-            collider.Offset = Vector3.Zero;
-            collider.Size = Vector3.One;
-            collider.AttachedRigidbody = rigidBody;
-
-            rigidBody.SetEntityDataBase(this);
-            collider.SetEntityDataBase(this);
-
-            components.Add(rigidBody);
-            components.Add(collider);
-
-            Init(EntityInfo);
-        }
-    }
-
     public class EntityDataBase
     {
         private static uint s_MaxEntityID = 0;
@@ -82,8 +19,11 @@ namespace NetCoreMMOServer.Network
 
         // Base Param
         public SyncData<bool> IsActive = new(true);
+
+        // TODO(Think) :: Private Position
         public SyncData<Vector3> Position = new(new Vector3(0.0f, 0.0f, 0.0f));
         public SyncData<Vector3> Velocity = new(new Vector3(0.0f, 0.0f, 0.0f));
+        public Transform Transform = new Transform();
 
         // Component System
         public List<Components.Component> components;
@@ -133,6 +73,11 @@ namespace NetCoreMMOServer.Network
         public uint EntityID => _entityInfo.EntityID;
         public SyncData<Zone?> CurrentZone => _currentZone;
 
+        public void Update(float dt)
+        {
+            Transform.Position = Position.Value;
+        }
+
         public EntityDataTable InitDataTablePacket()
         {
             if (_initDataTablePacket.IsCashed)
@@ -152,11 +97,12 @@ namespace NetCoreMMOServer.Network
         public EntityDataTable UpdateDataTablePacket()
         {
             if (_updateDataTablePacket.IsCashed)
-            { 
-                return _updateDataTablePacket; 
+            {
+                return _updateDataTablePacket;
             }
 
             _updateDataTablePacket.IsCashed = true;
+            Position.Value = Transform.Position;
             for (byte i = 0; i < _syncDatas.Count; ++i)
             {
                 if (_syncDatas[i].IsDirty)
@@ -198,7 +144,7 @@ namespace NetCoreMMOServer.Network
 
         public void MoveZone(Zone moveZone)
         {
-            if(_currentZone.Value?.ZoneCoord == moveZone.ZoneCoord)
+            if (_currentZone.Value?.ZoneCoord == moveZone.ZoneCoord)
             {
                 return;
             }

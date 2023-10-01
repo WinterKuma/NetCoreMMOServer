@@ -8,7 +8,11 @@ namespace NetCoreMMOServer.Physics
         private Vector3 _offset;
         private float _radius;
 
-        public Vector3 Center => Owner.Position.Value + _offset;
+        public SphereCollider(Transform transform, RigidBody? attachedRigidbody = null, bool isTrigger = false) : base(transform, attachedRigidbody, isTrigger)
+        {
+        }
+
+        public Vector3 Center => Transform.Position + _offset;
         public Vector3 Offset
         {
             get { return _offset; }
@@ -25,28 +29,19 @@ namespace NetCoreMMOServer.Physics
 
         public override bool CheckCollision(Collider other, out Vector3 normal, out float depth)
         {
-            //bool result = false;
-            //normal = Vector3.Zero;
-            //depth = 0;
-
             switch (other)
             {
                 case CubeCollider cube:
                     return this.IsCollideWithCube(cube, out normal, out depth);
-                    break;
 
                 case SphereCollider sphere:
                     return this.IsCollideWithSphere(sphere, out normal, out depth);
-                    break;
 
                 default:
                     normal = Vector3.Zero;
                     depth = 0;
                     return false;
-                    break;
             }
-
-            //return result;
         }
     }
 }

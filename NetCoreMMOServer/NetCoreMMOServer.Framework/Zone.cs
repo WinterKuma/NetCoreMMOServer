@@ -4,10 +4,9 @@ using NetCoreMMOServer.Physics;
 using NetCoreMMOServer.Utility;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace NetCoreMMOServer.Network
+namespace NetCoreMMOServer.Framework
 {
     [StructLayout(LayoutKind.Explicit)]
     public struct ZoneID
@@ -79,7 +78,7 @@ namespace NetCoreMMOServer.Network
         {
             Init(ZoneCoord);
             _zoneGridPointer = ZoneGridPointer;
-            _packetQueue = new Queue<(IMPacket, User)> ();
+            _packetQueue = new Queue<(IMPacket, User)>();
             _physicsSimulator = new(this);
             _chunkBufferWriter = new(new byte[0xffff]);
             _zoneChunk = new ZoneChunk();
@@ -106,7 +105,7 @@ namespace NetCoreMMOServer.Network
                 {
                     for (int z = _minZoneCoord.Z; z <= _maxZoneCoord.Z; z++)
                     {
-                        foreach(var entity in _zoneGridPointer[x, y, z]._currentEntities)
+                        foreach (var entity in _zoneGridPointer[x, y, z]._currentEntities)
                         {
                             _physicsSimulator.AddEntity(entity);
                             //_addEntities.Add(entity);
@@ -132,7 +131,7 @@ namespace NetCoreMMOServer.Network
 
         public void AddEntity(EntityDataBase entity)
         {
-            if(_currentEntities.Contains(entity))
+            if (_currentEntities.Contains(entity))
             {
                 return;
             }
@@ -142,7 +141,7 @@ namespace NetCoreMMOServer.Network
 
         public void RemoveEntity(EntityDataBase entity)
         {
-            if(!_currentEntities.Contains(entity))
+            if (!_currentEntities.Contains(entity))
             {
                 return;
             }
@@ -156,7 +155,7 @@ namespace NetCoreMMOServer.Network
             _removeEntities.Clear();
             _oldEntities.Clear();
 
-            foreach(var entity in _currentEntities)
+            foreach (var entity in _currentEntities)
             {
                 _oldEntities.Add(entity);
             }
@@ -167,20 +166,20 @@ namespace NetCoreMMOServer.Network
             ZoneDTO zoneDTO = new ZoneDTO();
             zoneDTO.Id = _zoneID;
 
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
-                for(int j = 0; j < 3; j++)
+                for (int j = 0; j < 3; j++)
                 {
-                    for(int k = 0; k < 3; k++)
+                    for (int k = 0; k < 3; k++)
                     {
                         _zoneChunk.chunks[i, j, k] = BlockType.None;
                     }
                 }
             }
 
-            foreach(var entity in _currentEntities)
+            foreach (var entity in _currentEntities)
             {
-                if(entity.EntityType == EntityType.Block)
+                if (entity.EntityType == EntityType.Block)
                 {
                     Vector3 blockPosition = entity.Position.Value - ZonePosition + (ZoneOption.ZoneSize - Vector3.One) * 0.5f;
                     Vector3Int blockCoord = new Vector3Int(blockPosition);

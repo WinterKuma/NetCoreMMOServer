@@ -1,6 +1,5 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Utility;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -67,9 +66,9 @@ namespace NetCoreMMOServer.Packet
 
         public void SetValue(ISyncData syncData)
         {
-            if(syncData is SyncData<T> data)
+            if (syncData is SyncData<T> data)
             {
-                Value = data.Value; 
+                Value = data.Value;
             }
         }
     }
@@ -126,7 +125,7 @@ namespace NetCoreMMOServer.Packet
 
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
-            if(obj is EntityInfo info)
+            if (obj is EntityInfo info)
             {
                 return this.EntityType == info.EntityType && this.EntityID == info.EntityID;
             }

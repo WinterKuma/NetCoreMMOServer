@@ -1,9 +1,8 @@
-﻿using NetCoreMMOServer.Network.Components;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace NetCoreMMOServer.Physics
 {
-    public class Transform : Component
+    public class Transform
     {
         private Vector3 _position;
 

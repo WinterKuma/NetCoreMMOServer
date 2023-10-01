@@ -1,9 +1,10 @@
 ﻿using MemoryPack;
+using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 
-namespace NetCoreMMOServer.Network
+namespace NetCoreMMOServer.Framework
 {
     public class User
     {

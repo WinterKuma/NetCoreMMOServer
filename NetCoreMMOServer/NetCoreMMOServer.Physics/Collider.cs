@@ -1,12 +1,19 @@
-﻿using NetCoreMMOServer.Network.Components;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace NetCoreMMOServer.Physics
 {
-    public abstract class Collider : Component
+    public abstract class Collider
     {
         private RigidBody? _attachedRigidbody = null;
         private bool _isTrigger;
+        private Transform _transform;
+
+        public Collider(Transform transform, RigidBody? attachedRigidbody = null, bool isTrigger = false)
+        {
+            _attachedRigidbody = attachedRigidbody;
+            _isTrigger = isTrigger;
+            _transform = transform;
+        }
 
         public bool IsTrigger
         {
@@ -18,6 +25,12 @@ namespace NetCoreMMOServer.Physics
         {
             get { return _attachedRigidbody; }
             set { _attachedRigidbody = value; }
+        }
+
+        public Transform Transform
+        {
+            get { return _transform; }
+            set { _transform = value; }
         }
 
         public abstract bool CheckCollision(Collider other, out Vector3 normal, out float depth);

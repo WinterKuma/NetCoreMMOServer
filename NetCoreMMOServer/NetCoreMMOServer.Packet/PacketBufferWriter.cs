@@ -33,7 +33,7 @@ namespace NetCoreMMOServer.Packet
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
-            for (int i = 0;i < _written; i++)
+            for (int i = 0; i < _written; i++)
             {
                 _buffer[i] = 0;
             }

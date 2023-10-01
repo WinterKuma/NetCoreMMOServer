@@ -1,6 +1,5 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Packet;
-using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -15,7 +14,7 @@ namespace NetCoreMMOServer.Network
 
             if (buffer.Length <= 0) return false;
 
-            if(!TryReadUnionHeader(buffer, out ushort tag))
+            if (!TryReadUnionHeader(buffer, out ushort tag))
             {
                 Console.WriteLine($"Error:: Can't Read Union Header!!!");
                 return false;

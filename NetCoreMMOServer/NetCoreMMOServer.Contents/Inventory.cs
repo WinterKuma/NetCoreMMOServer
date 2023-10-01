@@ -22,7 +22,7 @@ namespace NetCoreMMOServer.Network.Components.Contents
         public short count;
     }
 
-    public class Inventory : Component
+    public class Inventory : Framework.Components.Component
     {
         private readonly List<SyncData<int>> items;
 
