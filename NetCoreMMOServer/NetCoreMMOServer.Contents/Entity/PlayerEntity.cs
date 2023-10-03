@@ -16,7 +16,7 @@ namespace NetCoreMMOServer.Contents.Entity
     {
         public Inventory Inventory;
 
-        public PlayerEntity() : base(EntityType.Player)
+        public PlayerEntity()
         {
             //_syncDatas.Add(power);
             //_syncDatas.Add(hp);
@@ -45,7 +45,7 @@ namespace NetCoreMMOServer.Contents.Entity
             }
             Inventory.Items[0].Value = new Item() { code = ItemCode.Block, count = 10 }.buffer;
 
-            Init(EntityInfo);
+            Init(new EntityInfo() { EntityID = EntityInfo.EntityID, EntityType = EntityType.Player });
         }
     }
 }

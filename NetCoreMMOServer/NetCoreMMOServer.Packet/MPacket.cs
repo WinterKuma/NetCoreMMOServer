@@ -120,6 +120,12 @@ namespace NetCoreMMOServer.Packet
         {
         }
 
+        public EntityInfo(uint entityId, EntityType entityType)
+        {
+            EntityID = entityId;
+            EntityType = entityType;
+        }
+
         public EntityType EntityType { get; set; } = EntityType.None;
         public uint EntityID { get; set; } = 0;
 

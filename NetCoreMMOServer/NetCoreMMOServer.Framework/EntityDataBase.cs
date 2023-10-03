@@ -28,9 +28,9 @@ namespace NetCoreMMOServer.Framework
         // Component System
         public List<Components.Component> components;
 
-        public EntityDataBase(EntityType entityType = EntityType.None)
+        public EntityDataBase()
         {
-            _entityInfo.EntityType = entityType;
+            _entityInfo.EntityType = EntityType.None;
             _entityInfo.EntityID = ++s_MaxEntityID;
 
             _initDataTablePacket = new();
@@ -66,6 +66,10 @@ namespace NetCoreMMOServer.Framework
             _currentZone.Value = null;
 
             //components.Clear();
+        }
+        public void Init(uint entityID, EntityType entityType)
+        {
+            Init(new EntityInfo(entityID, entityType));
         }
 
         public EntityInfo EntityInfo => _entityInfo;

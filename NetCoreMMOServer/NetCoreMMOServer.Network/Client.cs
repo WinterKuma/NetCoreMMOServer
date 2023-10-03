@@ -8,101 +8,49 @@ using System.Net.Sockets;
 
 namespace NetCoreMMOServer.Network
 {
-    public class Client
+    public class Client : PipeSocket
     {
-        [AllowNull] private Socket _clientSocket;
-        private IDuplexPipe? _pipe;
-
         public event AsyncAction<Socket>? Connected;
-        public event Action<IMPacket>? Received;
 
         public Client()
         {
+            //Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.ReuseAddress, true);
         }
 
         public void OnConnect(IPEndPoint serverEP)
         {
-            _clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            //_clientSocket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.ReuseAddress, true);
-            _clientSocket.ConnectAsync(serverEP).Wait();
+            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socket.ConnectAsync(serverEP).Wait();
 
-            _ = ConnectAsync(_clientSocket);
+            _ = ConnectAsync(socket);
         }
 
         public async Task OnConnectAsync(IPEndPoint serverEP)
         {
-            _clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            //_clientSocket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.ReuseAddress, true);
-            await _clientSocket.ConnectAsync(serverEP);
+            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            await socket.ConnectAsync(serverEP);
 
-            _ = ConnectAsync(_clientSocket);
+            _ = ConnectAsync(socket);
         }
 
         private async Task ConnectAsync(Socket socket)
         {
             Console.WriteLine($"[{socket.RemoteEndPoint}]: connected");
+            SetSocket(socket);
 
-            _pipe = new DuplexPipe(new NetworkStream(socket));
             Connected?.Invoke(socket);
 
             await Task.WhenAll(ReceiveAsync());
 
-            await _pipe.Input.CompleteAsync();
-            await _pipe.Output.CompleteAsync();
+            await Reader.CompleteAsync();
+            await Writer.CompleteAsync();
 
             Console.WriteLine($"[{socket.RemoteEndPoint}]: disconnected");
         }
 
-        public async Task SendAsync(ReadOnlyMemory<byte> buffer)
-        {
-            if (_pipe is null)
-            {
-                return;
-            }
-
-            FlushResult result = await _pipe.Output.WriteAsync(buffer);
-            if (result.IsCompleted)
-            {
-                Console.WriteLine($"SendAsync Result IsCompleted");
-            }
-        }
-
-        private async Task ReceiveAsync()
-        {
-            while (true)
-            {
-                if (_pipe is null)
-                {
-                    break;
-                }
-
-                ReadResult result = await _pipe.Input.ReadAsync();
-                ReadOnlySequence<byte> buffer = result.Buffer;
-
-                while (BufferResolver.TryReadPacket(ref buffer, out var packet))
-                {
-                    Received?.Invoke(packet);
-                }
-
-                _pipe.Input.AdvanceTo(buffer.Start, buffer.End);
-
-                if (result.IsCompleted)
-                {
-                    break;
-                }
-            }
-        }
-
         public void Disconnect()
         {
-            // Disconnect sockets
-            _clientSocket.Shutdown(SocketShutdown.Both);
-            _clientSocket.Disconnect(true);
-            _clientSocket.Close();
-
-            // Clear pipelines
-            _pipe?.Input.Complete();
-            _pipe?.Output.Complete();
+            Disconnect(false);
         }
     }
 }

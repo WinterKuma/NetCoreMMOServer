@@ -23,6 +23,18 @@ namespace NetCoreMMOServer.Utility
             }
         }
 
+        public T Get<T1>() where T1 : T, new()
+        {
+            if (_pool.TryTake(out var item))
+            {
+                return item;
+            }
+            else
+            {
+                return new T1();
+            }
+        }
+
         public void Return(T item)
         {
             _pool.Add(item);

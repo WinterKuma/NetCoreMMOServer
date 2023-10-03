@@ -60,7 +60,7 @@ namespace DummyClient
             }
         }
 
-        private void ProcessPacket(IMPacket packet)
+        private void ProcessPacket(IMPacket packet, PipeSocket socket)
         {
             switch (packet)
             {

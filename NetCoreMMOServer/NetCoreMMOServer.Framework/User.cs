@@ -6,13 +6,12 @@ using System.Net.Sockets;
 
 namespace NetCoreMMOServer.Framework
 {
-    public class User
+    public class User : PipeSocket
     {
-        private static int s_MaxID = 0;
-        private readonly int _id;
+        private static uint s_MaxID = 0;
+        private readonly uint _id;
 
-        private Socket _socket;
-        private IDuplexPipe _pipe;
+        //private PipeSocket? _pipeSocket;
         private EntityDataBase? _linkedEntity;
 
         private PacketBufferWriter _packetBufferWriter;
@@ -28,8 +27,6 @@ namespace NetCoreMMOServer.Framework
         {
             _id = ++s_MaxID;
 
-            _socket = null;
-            _pipe = null;
             _linkedEntity = null;
 
             _packetBufferWriter = new(new byte[0xffff]);
@@ -42,29 +39,29 @@ namespace NetCoreMMOServer.Framework
             _disposeEntityList = new();
         }
 
-        public User(int id, Socket? socket = null, IDuplexPipe? pipe = null) : this()
-        {
-            _id = id;
+        //public User(int id, Socket? socket = null, IDuplexPipe? pipe = null) : this()
+        //{
+        //    _id = id;
 
-            if (socket != null)
-            {
-                _socket = socket;
-                if (pipe == null)
-                {
-                    _pipe = new DuplexPipe(new NetworkStream(socket));
-                }
-            }
+        //    if (socket != null)
+        //    {
+        //        _socket = socket;
+        //        if (pipe == null)
+        //        {
+        //            _pipe = new DuplexPipe(new NetworkStream(socket));
+        //        }
+        //    }
 
-            if (pipe != null)
-            {
-                _pipe = pipe;
-            }
-        }
+        //    if (pipe != null)
+        //    {
+        //        _pipe = pipe;
+        //    }
+        //}
 
         public void Init(Socket socket)
         {
-            _socket = socket;
-            _pipe = new DuplexPipe(new NetworkStream(socket));
+            //_pipeSocket = new PipeSocket(socket);
+            SetSocket(socket);
 
             _currentZones.Clear();
             _addZones.Clear();
@@ -74,18 +71,14 @@ namespace NetCoreMMOServer.Framework
             _disposeEntityList.Clear();
         }
 
-        public int ID => _id;
-        public Socket Socket => _socket;
-        public IDuplexPipe Pipe => _pipe;
-        public PipeReader Reader => _pipe.Input;
-        public PipeWriter Writer => _pipe.Output;
+        public uint ID => _id;
         public EntityDataBase? LinkedEntity => _linkedEntity;
         public ref PacketBufferWriter PacketBufferWriter => ref _packetBufferWriter;
 
         public async Task CompleteAsync()
         {
-            await _pipe.Input.CompleteAsync();
-            await _pipe.Output.CompleteAsync();
+            await Reader.CompleteAsync();
+            await Writer.CompleteAsync();
         }
 
         public void LinkEntity(EntityDataBase linkedEntity)

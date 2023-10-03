@@ -7,7 +7,7 @@ namespace NetCoreMMOServer.Contents.Entity
 {
     public partial class BlockEntity : EntityDataBase
     {
-        public BlockEntity() : base(EntityType.Block)
+        public BlockEntity()
         {
             RigidBodyComponent rigidBody = new(1f, true);
             rigidBody.RigidBody.Transform = Transform;
@@ -23,7 +23,7 @@ namespace NetCoreMMOServer.Contents.Entity
             components.Add(rigidBody);
             components.Add(collider);
 
-            Init(EntityInfo);
+            Init(new EntityInfo() { EntityID = EntityInfo.EntityID, EntityType = EntityType.Block });
         }
     }
 }

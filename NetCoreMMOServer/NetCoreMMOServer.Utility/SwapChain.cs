@@ -2,7 +2,7 @@
 {
     public class SwapChain<T> where T : class, new()
     {
-        private T[] _buffers;
+        private readonly T[] _buffers;
         private byte _bufferIndex;
 
         public SwapChain()

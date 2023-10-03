@@ -4,26 +4,34 @@ using System.Net.Sockets;
 
 namespace NetCoreMMOServer.Network
 {
-    public class Server
+    public abstract class Server
     {
         private readonly int _port;
-        private TcpListener? _listener;
+        private readonly TcpListener _listener;
 
-        public event AsyncPredicate<Socket>? Accepting;
-        public event AsyncAction<Socket>? Accepted;
+        //public event AsyncPredicate<Socket>? Accepting;
+        //public event AsyncAction<Socket>? Accepted;
 
         public Server(int port)
         {
             _port = port;
+            _listener = new TcpListener(IPAddress.Any, _port);
         }
+
+        public int Port => _port;
+        public TcpListener ServerSocket => _listener;
 
         public void Start(int backlog = (int)SocketOptionName.MaxConnections)
         {
-            _listener = new TcpListener(IPAddress.Any, _port);
+            //_listener = new TcpListener(IPAddress.Any, _port);
             _listener.Start(backlog);
 
             _ = OnAccept().ConfigureAwait(false);
         }
+
+        protected abstract Task Accepted(Socket socket);
+        protected abstract Task<bool> Accepting(Socket socket);
+
 
         private async Task OnAccept()
         {
@@ -37,7 +45,7 @@ namespace NetCoreMMOServer.Network
                     }
 
                     var socket = await _listener.AcceptSocketAsync().ConfigureAwait(false);
-                    _ = AcceptAsync(socket);
+                    _ = AcceptAsync(socket).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -49,23 +57,18 @@ namespace NetCoreMMOServer.Network
             }
         }
 
+
         private async Task AcceptAsync(Socket socket)
         {
             bool possibleAccept = true;
-            if (Accepting is not null)
-            {
-                possibleAccept = await Accepting.Invoke(socket).ConfigureAwait(false);
-            }
+            possibleAccept = await Accepting(socket).ConfigureAwait(false);
 
             if (possibleAccept)
             {
                 //Not Used Nagle Algorithm
                 socket.NoDelay = true;
 
-                if (Accepted is not null)
-                {
-                    await Accepted.Invoke(socket).ConfigureAwait(false);
-                }
+                await Accepted(socket).ConfigureAwait(false);
             }
             else
             {
