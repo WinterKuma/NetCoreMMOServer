@@ -222,11 +222,25 @@ namespace NetCoreMMOServer
         protected override void Initialize()
         {
             //_ = CommandAsync();
-
-            foreach (var zone in ZoneList)
+            for (int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
             {
-                LoadZoneDB(zone.ZoneCoord).ConfigureAwait(false);
+                for (int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
+                {
+                    if (!CreateEntity(EntityType.Block, out NetEntity entity, new Vector3(x, -2f, z)))
+                    {
+                        Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                        continue;
+                    }
+                    //entity.Position.Value = new Vector3(x, -2f, z);
+                    //Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+                    //_groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
+                }
             }
+
+            //foreach (var zone in ZoneList)
+            //{
+            //    LoadZoneDB(zone.ZoneCoord).ConfigureAwait(false);
+            //}
         }
 
         protected override void Release()
