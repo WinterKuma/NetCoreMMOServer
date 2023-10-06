@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace NetCoreMMOServer.Contents.Entity
 {
-    public partial class BlockEntity : EntityDataBase
+    public partial class BlockEntity : NetEntity
     {
         public BlockEntity()
         {
@@ -20,8 +20,8 @@ namespace NetCoreMMOServer.Contents.Entity
             rigidBody.SetEntityDataBase(this);
             collider.SetEntityDataBase(this);
 
-            components.Add(rigidBody);
-            components.Add(collider);
+            Components.Add(rigidBody);
+            Components.Add(collider);
 
             Init(new EntityInfo() { EntityID = EntityInfo.EntityID, EntityType = EntityType.Block });
         }

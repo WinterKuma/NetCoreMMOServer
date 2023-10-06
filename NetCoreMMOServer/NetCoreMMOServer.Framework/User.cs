@@ -12,16 +12,16 @@ namespace NetCoreMMOServer.Framework
         private readonly uint _id;
 
         //private PipeSocket? _pipeSocket;
-        private EntityDataBase? _linkedEntity;
+        private NetEntity? _linkedEntity;
 
         private PacketBufferWriter _packetBufferWriter;
         private HashSet<Zone> _currentZones;
         private HashSet<Zone> _addZones;
         private HashSet<Zone> _removeZones;
 
-        private List<EntityDataBase> _updateEntityList;
-        private List<EntityDataBase> _initEntityList;
-        private List<EntityDataBase> _disposeEntityList;
+        private List<NetEntity> _updateEntityList;
+        private List<NetEntity> _initEntityList;
+        private List<NetEntity> _disposeEntityList;
 
         public User()
         {
@@ -72,7 +72,7 @@ namespace NetCoreMMOServer.Framework
         }
 
         public uint ID => _id;
-        public EntityDataBase? LinkedEntity => _linkedEntity;
+        public NetEntity? LinkedEntity => _linkedEntity;
         public ref PacketBufferWriter PacketBufferWriter => ref _packetBufferWriter;
 
         public async Task CompleteAsync()
@@ -81,7 +81,7 @@ namespace NetCoreMMOServer.Framework
             await Writer.CompleteAsync();
         }
 
-        public void LinkEntity(EntityDataBase linkedEntity)
+        public void LinkEntity(NetEntity linkedEntity)
         {
             _linkedEntity = linkedEntity;
         }
@@ -216,7 +216,7 @@ namespace NetCoreMMOServer.Framework
         }
 
         /// Entity Method
-        private void InitEntity(EntityDataBase entity)
+        private void InitEntity(NetEntity entity)
         {
             if (_disposeEntityList.Contains(entity))
             {
@@ -227,7 +227,7 @@ namespace NetCoreMMOServer.Framework
             _initEntityList.Add(entity);
         }
 
-        public void DisposeEntity(EntityDataBase entity)
+        public void DisposeEntity(NetEntity entity)
         {
             if (_initEntityList.Contains(entity))
             {

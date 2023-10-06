@@ -6,13 +6,13 @@ using System.Numerics;
 
 namespace NetCoreMMOServer.Contents.Entity
 {
-    public partial class PlayerEntity : EntityDataBase
+    public partial class PlayerEntity : NetEntity
     {
         public SyncData<int> Power = new(1);
         public SyncData<int> Hp = new(10);
     }
 
-    public partial class PlayerEntity : EntityDataBase
+    public partial class PlayerEntity : NetEntity
     {
         public Inventory Inventory;
 
@@ -35,8 +35,8 @@ namespace NetCoreMMOServer.Contents.Entity
 
             Inventory = new(9);
 
-            components.Add(rigidBody);
-            components.Add(collider);
+            Components.Add(rigidBody);
+            Components.Add(collider);
             //components.Add(inventory);
 
             foreach (var item in Inventory.Items)

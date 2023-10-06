@@ -23,11 +23,11 @@ namespace NetCoreMMOServer.Physics
             _otherZoneColliders.Clear();
         }
 
-        public void AddEntity(EntityDataBase entity)
+        public void AddEntity(NetEntity entity)
         {
             if (entity.CurrentZone.Value == _zone)
             {
-                foreach (var component in entity.components)
+                foreach (var component in entity.Components)
                 {
                     if (component is ColliderComponent collider)
                     {
@@ -42,7 +42,7 @@ namespace NetCoreMMOServer.Physics
             }
             else
             {
-                foreach (var component in entity.components)
+                foreach (var component in entity.Components)
                 {
                     if (component is ColliderComponent collider)
                     {
@@ -56,26 +56,23 @@ namespace NetCoreMMOServer.Physics
         {
             foreach (var rigidBody in _rigidBodyComponents)
             {
-                rigidBody.RigidBody.NextVelocity = rigidBody.Owner.Velocity.Value;
-            }
-
-            foreach (var rigidBody in _rigidBodies)
-            {
-                if (rigidBody.IsStatic)
+                //rigidBody.RigidBody.NextVelocity = rigidBody.Owner.Velocity.Value;
+                if (rigidBody.RigidBody.IsStatic)
                 {
                     continue;
                 }
                 // gravity
-                float gravity = rigidBody.Velocity.Y;
-                rigidBody.PrevVelcotiy = rigidBody.Velocity;
-                rigidBody.Velocity = rigidBody.NextVelocity;
-                if (rigidBody.Velocity.Y == 0.0f)
+                float gravity = rigidBody.RigidBody.Velocity.Y;
+                //rigidBody.RigidBody.PrevVelcotiy = rigidBody.RigidBody.Velocity;
+                rigidBody.RigidBody.Velocity = rigidBody.Owner.Velocity.Value;
+                if (rigidBody.RigidBody.Velocity.Y == 0.0f)
                 {
-                    rigidBody.Velocity += new Vector3(0.0f, gravity, 0.0f) + PhysicsOption.Gravity * dt;
+                    rigidBody.RigidBody.Velocity += new Vector3(0.0f, gravity, 0.0f) + PhysicsOption.Gravity * dt;
                 }
                 else
                 {
-                    rigidBody.Velocity = new Vector3(rigidBody.Velocity.X, 0.0f, rigidBody.Velocity.Z);
+                    rigidBody.Owner.Velocity.Value = new Vector3(rigidBody.Owner.Velocity.Value.X, 0.0f, rigidBody.Owner.Velocity.Value.Z);
+                    //rigidBody.Owner.Velocity.Value = rigidBody.Owner.Velocity.Value * new Vector3(1.0f, 0.0f, 1.0f);
                 }
             }
         }

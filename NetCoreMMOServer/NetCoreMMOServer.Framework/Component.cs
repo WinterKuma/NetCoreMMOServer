@@ -2,11 +2,11 @@
 {
     public class Component
     {
-        private EntityDataBase _owner;
+        private NetEntity _owner;
 
-        public EntityDataBase Owner => _owner;
+        public NetEntity Owner => _owner;
 
-        public void SetEntityDataBase(EntityDataBase owner)
+        public void SetEntityDataBase(NetEntity owner)
         {
             _owner = owner;
         }

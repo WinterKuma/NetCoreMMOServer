@@ -37,8 +37,9 @@ namespace NetCoreMMOServer.Framework
         //private EntityDataBase?[,,] _groundEntities;
 
         // Entity Control
-        private readonly ConcurrentDictionary<Type, ConcurrentPool<EntityDataBase>> _entityPoolTable;
-        private readonly ConcurrentDictionary<EntityInfo, EntityDataBase> _entityTable;
+        private readonly ConcurrentDictionary<Type, ConcurrentPool<NetEntity>> _entityPoolTable;
+        private readonly ConcurrentDictionary<NetEntity, ConcurrentPool<NetEntity>> _entityObjectPoolTable;
+        private readonly ConcurrentDictionary<EntityInfo, NetEntity> _entityTable;
 
         public ZoneServer(int port) : base(port)
         {
@@ -66,6 +67,7 @@ namespace NetCoreMMOServer.Framework
             }
 
             _entityPoolTable = new();
+            _entityObjectPoolTable = new();
             _entityTable = new();
         }
 
@@ -80,7 +82,7 @@ namespace NetCoreMMOServer.Framework
         public List<User> UserList => _userList;
         public Dictionary<uint, User> UserDictionary => _userIDDictionary;
         public List<Zone> ZoneList => _zoneList;
-        public ConcurrentDictionary<EntityInfo, EntityDataBase> EntityTable => _entityTable;
+        public ConcurrentDictionary<EntityInfo, NetEntity> EntityTable => _entityTable;
 
         protected override async Task Accepted(Socket socket)
         {
@@ -305,7 +307,7 @@ namespace NetCoreMMOServer.Framework
             return _zones[x, y, z];
         }
 
-        protected virtual void SetZone(EntityDataBase entity)
+        protected virtual void SetZone(NetEntity entity)
         {
             Vector3 pos = entity.Position.Value;
             if (pos.X > ZoneOption.TotalZoneHalfWidth ||
@@ -331,15 +333,22 @@ namespace NetCoreMMOServer.Framework
         }
 
         // Entity
-        protected bool CreateEntity<T>(out EntityDataBase entity, Vector3 position) where T : EntityDataBase, new()
+        protected bool CreateEntity<T>(out NetEntity entity, Vector3 position) where T : NetEntity, new()
         {
             if (!_entityPoolTable.TryGetValue(typeof(T), out var entityPool))
             {
-                entityPool = new ConcurrentPool<EntityDataBase>();
+                entityPool = new ConcurrentPool<NetEntity>();
             }
 
             entity = entityPool.Get<T>();
             entity.Transform.Position = position;
+
+            if (!_entityObjectPoolTable.TryAdd(entity, entityPool))
+            {
+                Console.WriteLine($"Error:: Failed!! => _entityObjectPoolTable.TryAdd({entity.EntityInfo}, {entity})");
+                entityPool.Return(entity);
+                return false;
+            }
 
             if (!_entityTable.TryAdd(entity.EntityInfo, entity))
             {
@@ -351,7 +360,7 @@ namespace NetCoreMMOServer.Framework
             return true;
         }
 
-        protected bool ReleaseEntity<T>(EntityDataBase entity) where T : EntityDataBase
+        protected bool ReleaseEntity(NetEntity entity)
         {
             if (!_entityTable.TryRemove(entity.EntityInfo, out _))
             {
@@ -361,9 +370,17 @@ namespace NetCoreMMOServer.Framework
 
             entity.CurrentZone.Value?.RemoveEntity(entity);
 
-            if (!_entityPoolTable.TryGetValue(typeof(T), out var entityPool))
+            if (!_entityObjectPoolTable.TryRemove(entity, out var entityPool))
             {
-                entityPool = new ConcurrentPool<EntityDataBase>();
+                if (_entityObjectPoolTable.ContainsKey(entity))
+                {
+                    Console.WriteLine($"Error:: Failed!! => _entityObjectPoolTable.TryRemove({entity})");
+                }
+                else
+                {
+                    Console.WriteLine($"Error:: Failed!! => {entity} is Not Pool Object!!)");
+                }
+                return false;
             }
             entityPool.Return(entity);
 

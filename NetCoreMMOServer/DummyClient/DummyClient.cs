@@ -1,4 +1,5 @@
 ﻿using MemoryPack;
+using NetCoreMMOServer.Contents.Entity;
 using NetCoreMMOServer.Framework;
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
@@ -31,8 +32,8 @@ namespace DummyClient
         private Random _random = new Random();
 
         private EntityInfo _entityInfo;
-        private EntityDataBase? _linkedEntity = null;
-        private Dictionary<EntityInfo, EntityDataBase> _entityTable = new();
+        private NetEntity? _linkedEntity = null;
+        private Dictionary<EntityInfo, NetEntity> _entityTable = new();
 
         public bool IsSpawn => _isSpawn;
         public int ClientID => _clientID;
@@ -47,7 +48,7 @@ namespace DummyClient
 
         public void Connect(IPEndPoint serverEP)
         {
-            _client.OnConnectAsync(serverEP);
+            _client.OnConnect(serverEP);
         }
 
         public void SetLinkEntity(EntityInfo entityInfo)
@@ -76,7 +77,7 @@ namespace DummyClient
                     {
                         if(_entityInfo == entityDataTablePacket.EntityInfo)
                         {
-                            var entity = new EntityDataBase();
+                            var entity = new PlayerEntity();
                             entity.Init(entityDataTablePacket.EntityInfo);
                             _entityTable.Add(entityDataTablePacket.EntityInfo, entity);
                             SetLinkEntity(_entityInfo);
