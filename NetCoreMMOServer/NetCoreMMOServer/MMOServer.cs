@@ -12,7 +12,7 @@ namespace NetCoreMMOServer
 {
     internal class MMOServer : ZoneServer
     {
-        private EntityDataBase?[,,] _groundEntities;
+        private NetEntity?[,,] _groundEntities;
 
         //Packet Instance
         private SetLinkedEntityPacket _setLinkedEntityPacket;
@@ -21,7 +21,7 @@ namespace NetCoreMMOServer
 
         public MMOServer(int port) : base(port)
         {
-            _groundEntities = new EntityDataBase[(int)MathF.Ceiling(ZoneOption.TotalZoneWidth), (int)MathF.Ceiling(ZoneOption.TotalZoneHeight), (int)MathF.Ceiling(ZoneOption.TotalZoneDepth)];
+            _groundEntities = new NetEntity[(int)MathF.Ceiling(ZoneOption.TotalZoneWidth), (int)MathF.Ceiling(ZoneOption.TotalZoneHeight), (int)MathF.Ceiling(ZoneOption.TotalZoneDepth)];
 
             _httpClient = new HttpClient() { BaseAddress = new Uri("https://localhost:7251") };
 
@@ -50,7 +50,7 @@ namespace NetCoreMMOServer
             });
         }
 
-        private bool CreateEntity(EntityType entityType, out EntityDataBase entity, Vector3 position)
+        private bool CreateEntity(EntityType entityType, out NetEntity entity, Vector3 position)
         {
             switch (entityType)
             {
@@ -75,18 +75,18 @@ namespace NetCoreMMOServer
             return true;
         }
 
-        private bool ReleaseEntity(EntityDataBase entity)
+        private bool ReleaseEntity(NetEntity entity)
         {
             switch (entity.EntityType)
             {
                 case EntityType.Player:
-                    if (!ReleaseEntity<PlayerEntity>(entity))
+                    if (!ReleaseEntity(entity))
                     {
                         return false;
                     }
                     break;
                 case EntityType.Block:
-                    if (ReleaseEntity<BlockEntity>(entity))
+                    if (ReleaseEntity(entity))
                     {
                         return false;
                     }
@@ -255,7 +255,7 @@ namespace NetCoreMMOServer
                 case GroundModificationPacket groundModificationPacket:
                     Vector3Int gPos = groundModificationPacket.Position;
                     Vector3Int gGridPos = gPos + new Vector3Int(ZoneOption.TotalZoneHalfSize);
-                    EntityDataBase? gBlock = _groundEntities[gGridPos.X, gGridPos.Y, gGridPos.Z];
+                    NetEntity? gBlock = _groundEntities[gGridPos.X, gGridPos.Y, gGridPos.Z];
                     if (groundModificationPacket.IsCreate)
                     {
                         if (gBlock == null)
