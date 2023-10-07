@@ -21,6 +21,7 @@ namespace NetCoreMMOServer.Physics
         {
             base.ResetEntity();
             _otherZoneColliders.Clear();
+            _rigidBodyComponents.Clear();
         }
 
         public void AddEntity(NetEntity entity)
@@ -52,32 +53,62 @@ namespace NetCoreMMOServer.Physics
             }
         }
 
+        public void RemoveEntity(NetEntity entity)
+        {
+            if (entity.CurrentZone.Value == _zone)
+            {
+                foreach (var component in entity.Components)
+                {
+                    if (component is ColliderComponent collider)
+                    {
+                        _colliders.Remove(collider.Collider);
+                    }
+                    if (component is RigidBodyComponent rigidbody)
+                    {
+                        _rigidBodies.Remove(rigidbody.RigidBody);
+                        _rigidBodyComponents.Remove(rigidbody);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var component in entity.Components)
+                {
+                    if (component is ColliderComponent collider)
+                    {
+                        _otherZoneColliders.Remove(collider.Collider);
+                    }
+                }
+            }
+        }
+
         public override void Update(float dt)
         {
             foreach (var rigidBody in _rigidBodyComponents)
             {
-                //rigidBody.RigidBody.NextVelocity = rigidBody.Owner.Velocity.Value;
                 if (rigidBody.RigidBody.IsStatic)
                 {
                     continue;
                 }
                 // gravity
-                float gravity = rigidBody.RigidBody.Velocity.Y;
-                //rigidBody.RigidBody.PrevVelcotiy = rigidBody.RigidBody.Velocity;
-                rigidBody.RigidBody.Velocity = rigidBody.Owner.Velocity.Value;
-                if (rigidBody.RigidBody.Velocity.Y == 0.0f)
+                float currentGravity = rigidBody.RigidBody.Velocity.Y;
+                Vector3 InputMovement = rigidBody.Owner.Velocity.Value;
+
+                rigidBody.RigidBody.Velocity = InputMovement;
+                if (InputMovement.Y == 0.0f)
                 {
-                    rigidBody.RigidBody.Velocity += new Vector3(0.0f, gravity, 0.0f) + PhysicsOption.Gravity * dt;
+                    rigidBody.RigidBody.Velocity += new Vector3(0.0f, currentGravity, 0.0f) + PhysicsOption.Gravity * dt;
                 }
-                else
-                {
-                    rigidBody.Owner.Velocity.Value = new Vector3(rigidBody.Owner.Velocity.Value.X, 0.0f, rigidBody.Owner.Velocity.Value.Z);
-                    //rigidBody.Owner.Velocity.Value = rigidBody.Owner.Velocity.Value * new Vector3(1.0f, 0.0f, 1.0f);
-                }
+                //else
+                //{
+                //    rigidBody.RigidBody.Velocity = InputMovement;
+                //    rigidBody.Owner.Velocity.Value = rigidBody.Owner.Velocity.Value * new Vector3(1.0f, 0.0f, 1.0f);
+                //}
+                rigidBody.Owner.Velocity.Value = Vector3.Zero;
             }
         }
 
-        public new void Step(float time)
+        public override void Step(float time)
         {
             base.Step(time);
 

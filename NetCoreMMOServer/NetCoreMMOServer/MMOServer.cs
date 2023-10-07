@@ -63,7 +63,7 @@ namespace NetCoreMMOServer
                 case EntityType.Block:
                     if (CreateEntity<BlockEntity>(out entity, position))
                     {
-                        Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+                        Vector3Int gPos = new Vector3Int(entity.Transform.Position + ZoneOption.TotalZoneHalfSize);
                         _groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
                     }
                     break;
@@ -75,18 +75,18 @@ namespace NetCoreMMOServer
             return true;
         }
 
-        private bool ReleaseEntity(NetEntity entity)
+        private new bool ReleaseEntity(NetEntity entity)
         {
             switch (entity.EntityType)
             {
                 case EntityType.Player:
-                    if (!ReleaseEntity(entity))
+                    if (!base.ReleaseEntity(entity))
                     {
                         return false;
                     }
                     break;
                 case EntityType.Block:
-                    if (ReleaseEntity(entity))
+                    if (!base.ReleaseEntity(entity))
                     {
                         return false;
                     }
@@ -299,7 +299,7 @@ namespace NetCoreMMOServer
                         {
                             if (!ReleaseEntity(gBlock))
                             {
-                                Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+                                Console.WriteLine($"Error:: Don't Release Entity [{EntityType.Block}]");
                                 break;
                             }
                             else
@@ -341,6 +341,37 @@ namespace NetCoreMMOServer
             {
                 ReleaseEntity(user.LinkedEntity);
             }
+        }
+
+        protected override void SetZone(NetEntity entity)
+        {
+            Vector3 pos = entity.Position.Value;
+            if (pos.X > ZoneOption.TotalZoneHalfWidth ||
+                pos.Y > ZoneOption.TotalZoneHalfHeight ||
+                pos.Z > ZoneOption.TotalZoneHalfDepth ||
+                pos.X < -ZoneOption.TotalZoneHalfWidth ||
+                pos.Y < -ZoneOption.TotalZoneHalfHeight ||
+                pos.Z < -ZoneOption.TotalZoneHalfDepth)
+            {
+                entity.Transform.Position = Vector3.Zero;
+                entity.Position.Value = Vector3.Zero;
+                entity.Position.IsDirty = true;
+                entity.Velocity.Value = Vector3.UnitY;
+                entity.Velocity.IsDirty = true;
+                //entity.MoveZone(_zones[1, 1]);
+                //return;
+                pos = entity.Position.Value;
+
+                if (entity is PlayerEntity player)
+                {
+                    player.GetDamage(2);
+                }
+            }
+
+            int x = Math.Clamp((int)((pos.X + ZoneOption.TotalZoneHalfWidth) * ZoneOption.InverseZoneWidth), 0, ZoneOption.ZoneCountX - 1);
+            int y = Math.Clamp((int)((pos.Y + ZoneOption.TotalZoneHalfHeight) * ZoneOption.InverseZoneHeight), 0, ZoneOption.ZoneCountY - 1);
+            int z = Math.Clamp((int)((pos.Z + ZoneOption.TotalZoneHalfDepth) * ZoneOption.InverseZoneDepth), 0, ZoneOption.ZoneCountZ - 1);
+            entity.MoveZone(GetZone(x, y, z));
         }
     }
 }

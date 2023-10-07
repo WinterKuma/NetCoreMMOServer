@@ -29,6 +29,8 @@ public class Main : MonoBehaviour
     //UI
     [SerializeField]
     private UIInventory _uiInventory;
+    [SerializeField]
+    private UIMyHp _uiMyHp;
 
     // Start is called before the first frame update
     void Awake()
@@ -80,6 +82,7 @@ public class Main : MonoBehaviour
         {
             _linkedEntity = _entityDictionary[entityInfo];
             _uiInventory.SetPlayerEntity(_linkedEntity);
+            _uiMyHp.SetPlayerEntity(_linkedEntity);
         }
     }
 

@@ -24,25 +24,28 @@ namespace NetCoreMMOServer.Network.Components.Contents
 
     public class Inventory : Framework.Components.Component
     {
-        private readonly List<SyncData<int>> items;
+        private readonly List<SyncData<int>> _items;
+        private readonly SyncData<int> _selectSlotIndex;
 
         private readonly short MaxItemCount = 64;
 
         public Inventory(int size)
         {
-            items = new List<SyncData<int>>(size);
+            _items = new List<SyncData<int>>(size);
             for(int i = 0;i < size; i++)
             {
-                items.Add(new SyncData<int>(0));
+                _items.Add(new SyncData<int>(0));
             }
+            _selectSlotIndex = new SyncData<int>(0);
         }
 
-        public List<SyncData<int>> Items => items;
+        public List<SyncData<int>> Items => _items;
+        public SyncData<int> SelectSlotIndex => _selectSlotIndex;
 
         public bool AddItem(ItemCode code, int count)
         {
             Item itemBuffer = new Item();
-            foreach (SyncData<int> item in items)
+            foreach (SyncData<int> item in _items)
             {
                 itemBuffer.buffer = item.Value;
                 if(itemBuffer.code == code)
@@ -86,7 +89,7 @@ namespace NetCoreMMOServer.Network.Components.Contents
             Item itemBuffer = new Item();
             int inventoryItemCount = 0;
 
-            foreach(SyncData<int> item in items)
+            foreach(SyncData<int> item in _items)
             {
                 itemBuffer.buffer = item.Value;
                 if(itemBuffer.code == code)
@@ -97,7 +100,7 @@ namespace NetCoreMMOServer.Network.Components.Contents
 
             if(inventoryItemCount >= count)
             {
-                foreach (SyncData<int> item in items)
+                foreach (SyncData<int> item in _items)
                 {
                     itemBuffer.buffer = item.Value;
                     if (itemBuffer.code == code)
@@ -128,7 +131,7 @@ namespace NetCoreMMOServer.Network.Components.Contents
             int itemCount = 0;
             Item itemBuffer = new Item();
 
-            foreach (SyncData<int> item in items)
+            foreach (SyncData<int> item in _items)
             {
                 itemBuffer.buffer = item.Value;
                 if (itemBuffer.code == code)

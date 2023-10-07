@@ -1,5 +1,6 @@
 ﻿using NetCoreMMOServer.Framework.Components;
 using NetCoreMMOServer.Physics;
+using System.Numerics;
 
 namespace NetCoreMMOServer.Framework
 {
@@ -11,13 +12,15 @@ namespace NetCoreMMOServer.Framework
         public Entity()
         {
             _transform = new Transform();
+            _transform.Position = Vector3.Zero;
+
             _components = new List<Component>(12);
         }
 
         public Transform Transform => _transform;
         public List<Component> Components => _components;
 
-        public void Update(float dt)
+        public virtual void Update(float dt)
         {
 
         }

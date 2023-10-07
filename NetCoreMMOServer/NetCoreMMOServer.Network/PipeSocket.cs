@@ -105,7 +105,15 @@ namespace NetCoreMMOServer.Network
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Disconnect Socket[{Socket}] Error[{ex}]");
+                Console.Write($"Disconnect Socket[{Socket}] => ");
+                if (ex.InnerException is SocketException socketError)
+                {
+                    Console.WriteLine($"ErrorCode[{socketError.SocketErrorCode} : {socketError.ErrorCode}] Message[{socketError.Message}]");
+                }
+                else
+                {
+                    Console.WriteLine($"Error[{ex}]");
+                }
             }
         }
     }

@@ -83,7 +83,7 @@ namespace NetCoreMMOServer.Physics
             }
         }
 
-        protected virtual void Step(float time)
+        public virtual void Step(float time)
         {
             foreach (var rigidBody in _rigidBodies)
             {

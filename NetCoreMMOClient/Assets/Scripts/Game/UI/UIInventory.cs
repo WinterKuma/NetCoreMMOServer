@@ -7,6 +7,9 @@ public class UIInventory : MonoBehaviour
     private TextMeshProUGUI _number;
     private Entity _playerEntity;
 
+    [field: SerializeField]
+    private UIInvSlot[] _invSlots;
+
     public void SetPlayerEntity(Entity playerEntity)
     {
         _playerEntity = playerEntity;
@@ -17,8 +20,13 @@ public class UIInventory : MonoBehaviour
     {
         if (_playerEntity?.EntityData is PlayerEntity playerData)
         {
-            int blockCount = playerData.Inventory.GetItemCount(ItemCode.Block);
-            _number.text = blockCount.ToString();
+            for(int i = 0; i < _invSlots.Length; i++)
+            {
+                _invSlots[i].UpdateSlotItem(playerData.Inventory.Items[i].Value.GetItem());
+                _invSlots[i].SetSelect(playerData.Inventory.SelectSlotIndex.Value == i);
+            }
+            //int blockCount = playerData.Inventory.GetItemCount(ItemCode.Block);
+            //_number.text = blockCount.ToString();
         }
     }
 

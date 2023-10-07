@@ -13,12 +13,11 @@ namespace NetCoreMMOServer.Framework
     {
         // Server Option
         private bool _isRun = true;
-        private uint _frameRate = 100;
+        private uint _frameRate = 33;
 
         // Time
         private long _deltaMilliseconds = 0;
         private float _dt = 0.0f;
-        private float _stepTime = 0.0f;
 
         // User Control
         private readonly SwapChain<List<User>> _connectUserSwapChain;
@@ -40,6 +39,9 @@ namespace NetCoreMMOServer.Framework
         private readonly ConcurrentDictionary<Type, ConcurrentPool<NetEntity>> _entityPoolTable;
         private readonly ConcurrentDictionary<NetEntity, ConcurrentPool<NetEntity>> _entityObjectPoolTable;
         private readonly ConcurrentDictionary<EntityInfo, NetEntity> _entityTable;
+
+        // Physics Control
+        private float _deltaAcc = 0.0f;
 
         public ZoneServer(int port) : base(port)
         {
@@ -123,9 +125,11 @@ namespace NetCoreMMOServer.Framework
         public void Run()
         {
             Start();
+            Console.WriteLine("[Framework] : Server Start.");
             _isRun = true;
 
             Initialize();
+            Console.WriteLine("[Framework] : Server Initialize.");
 
             try
             {
@@ -135,7 +139,6 @@ namespace NetCoreMMOServer.Framework
                 {
                     _deltaMilliseconds = watch.ElapsedMilliseconds;
                     _dt = _deltaMilliseconds * 0.001f;
-                    _stepTime = _dt * PhysicsOption.InverseStepCount;
                     watch.Restart();
 
                     foreach (var user in _userList)
@@ -157,17 +160,35 @@ namespace NetCoreMMOServer.Framework
 
                     Update(_dt);
 
+                    _deltaAcc += _dt;
+                    if (_deltaAcc > 1)
+                    {
+                        _deltaAcc = 1;
+                    }
+
                     Parallel.ForEach(_zoneList, zone =>
                     {
+                        zone.Update(_dt);
                         zone.FixedUpdate(_dt);
                     });
 
-                    for (int i = 0; i < PhysicsOption.StepCount; i++)
+                    //foreach (var zone in _zoneList)
+                    //{
+                    //    zone.Update(_dt);
+                    //    zone.FixedUpdate(_dt);
+                    //}
+
+                    while (_deltaAcc >= PhysicsOption.IntervalDelta)
                     {
                         Parallel.ForEach(_zoneList, zone =>
                         {
-                            zone.Step(_stepTime);
+                            zone.Step(PhysicsOption.IntervalDelta);
                         });
+                        //foreach (var zone in _zoneList)
+                        //{
+                        //    zone.Step(PhysicsOption.IntervalDelta);
+                        //}
+                        _deltaAcc -= PhysicsOption.IntervalDelta;
                     }
 
                     ProcessDisconnectUser();
@@ -194,19 +215,17 @@ namespace NetCoreMMOServer.Framework
                     {
                         Thread.Sleep(Math.Max(0, (int)(_frameRate - watch.ElapsedMilliseconds)));
                     }
-                    else
-                    {
-
-                    }
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[Framework] : Server Loop Error Exceptions.");
                 Console.WriteLine(ex.ToString());
             }
             finally
             {
                 Release();
+                Console.WriteLine($"[Framework] : Server Release");
             }
         }
 
@@ -317,6 +336,7 @@ namespace NetCoreMMOServer.Framework
                 pos.Y < -ZoneOption.TotalZoneHalfHeight ||
                 pos.Z < -ZoneOption.TotalZoneHalfDepth)
             {
+                entity.Transform.Position = Vector3.Zero;
                 entity.Position.Value = Vector3.Zero;
                 entity.Position.IsDirty = true;
                 entity.Velocity.Value = Vector3.UnitY;

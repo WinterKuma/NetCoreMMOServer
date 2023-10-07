@@ -116,18 +116,18 @@ namespace NetCoreMMOServer.Framework
                         foreach (var entity in _zoneGridPointer[x, y, z]._currentEntities)
                         {
                             _physicsSimulator.AddEntity(entity);
-                            //_addEntities.Add(entity);
                         }
+                        //foreach (var entity in _zoneGridPointer[x, y, z]._addEntities)
+                        //{
+                        //    _physicsSimulator.AddEntity(entity);
+                        //}
+                        //foreach (var entity in _zoneGridPointer[x, y, z]._removeEntities)
+                        //{
+                        //    _physicsSimulator.RemoveEntity(entity);
+                        //}
                     }
                 }
             }
-
-            //_physicsSimulator.ResetEntity();
-
-            //foreach (var entity in _aroundEntities)
-            //{
-            //    _physicsSimulator.AddEntity(entity);
-            //}
 
             _physicsSimulator.Update(dt);
         }

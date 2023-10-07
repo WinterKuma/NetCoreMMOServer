@@ -73,9 +73,9 @@ namespace NetCoreMMOServer.Framework
         public uint EntityID => _entityInfo.EntityID;
         public SyncData<Zone?> CurrentZone => _currentZone;
 
-        public void Update(float dt)
+        public override void Update(float dt)
         {
-            Transform.Position = Position.Value;
+            //Transform.Position = Position.Value;
         }
 
         public EntityDataTable InitDataTablePacket()

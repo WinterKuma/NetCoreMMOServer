@@ -23,6 +23,7 @@ public struct Item
 public class Inventory
 {
     private readonly List<SyncData<int>> items;
+    private readonly SyncData<int> selectSlotIndex;
 
     public Inventory(int size)
     {
@@ -31,9 +32,11 @@ public class Inventory
         {
             items.Add(new SyncData<int>(0));
         }
+        selectSlotIndex = new SyncData<int>(0);
     }
 
     public List<SyncData<int>> Items => items;
+    public SyncData<int> SelectSlotIndex => selectSlotIndex;
 
     public bool AddItem(ItemCode code, int count)
     {
@@ -115,6 +118,18 @@ public class Inventory
         }
 
         return itemCount;
+    }
+
+    public bool TryGetCurrentItem(out Item item)
+    {
+        if (selectSlotIndex.Value < 0 || selectSlotIndex.Value >= items.Count)
+        {
+            item = new Item();
+            return false;
+        }
+
+        item = items[selectSlotIndex.Value].Value.GetItem();
+        return true;
     }
 }
 

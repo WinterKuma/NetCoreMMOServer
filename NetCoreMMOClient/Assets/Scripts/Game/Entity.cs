@@ -75,8 +75,10 @@ public class Entity : MonoBehaviour
         if (IsMine)
         {
             ScreenRotationUpdate();
-            MovePacketUpdate();
+            MoveUpdate();
+            InventoryUpdate();
             MouseUpdate();
+            EntityPacketUpdate();
         }
     }
 
@@ -94,7 +96,7 @@ public class Entity : MonoBehaviour
         Camera.main.transform.localRotation = Quaternion.Euler(new Vector3(_xRotate, 0f, 0f));
     }
 
-    public void MovePacketUpdate()
+    public void MoveUpdate()
     {
         bool isJump = false;
         Vector3 dir = Vector3.zero;
@@ -128,7 +130,24 @@ public class Entity : MonoBehaviour
         {
             EntityData.Velocity.Value = new Vector3(EntityData.Velocity.Value.x, _jumpPower, EntityData.Velocity.Value.z);
         }
+    }
 
+    public void InventoryUpdate()
+    {
+        for(KeyCode key = KeyCode.Alpha1; key <= KeyCode.Alpha9; key++)
+        {
+            if (Input.GetKey(key))
+            {
+                if (EntityData is PlayerEntity playerEntity)
+                {
+                    playerEntity.Inventory.SelectSlotIndex.Value = key - KeyCode.Alpha1;
+                }
+            }
+        }
+    }
+
+    public void EntityPacketUpdate()
+    {
         Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(EntityData.UpdateDataTablePacket()));
         EntityData.ClearDataTablePacket();
     }
@@ -137,6 +156,12 @@ public class Entity : MonoBehaviour
     {
         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
         RaycastHit hitData;
+
+        if (!(EntityData is PlayerEntity playerEntity))
+        {
+            return;
+        }
+
         if (Physics.Raycast(ray, out hitData, 1000, _groundBoxLayerMask))
         {
             _hitGroundBox = hitData.collider.gameObject;
@@ -145,14 +170,20 @@ public class Entity : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
             {
-                _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position + _hitNormal);
-                _groundModificationPacket.IsCreate = true;
-                Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
+                if (playerEntity.Inventory.TryGetCurrentItem(out Item item))
+                {
+                    if (item.code == ItemCode.Block)
+                    {
+                        _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position + _hitNormal);
+                        _groundModificationPacket.IsCreate = true;
+                        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
+                    }
+                }
             }
             else if (Input.GetMouseButtonDown(1))
             {
                 _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position);
-                _groundModificationPacket.IsCreate = false; 
+                _groundModificationPacket.IsCreate = false;
                 Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
             }
         }
