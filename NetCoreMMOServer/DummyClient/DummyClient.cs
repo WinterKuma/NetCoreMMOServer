@@ -101,7 +101,7 @@ namespace DummyClient
                         //    SetLinkEntity(_entityInfo);
                         //}
                     }
-                    _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
+                    _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket_Client(entityDataTablePacket);
                     if (!_entityTable[entityDataTablePacket.EntityInfo].IsActive.Value)
                     {
                         if (_entityTable.Remove(entityDataTablePacket.EntityInfo, out var entity))
@@ -185,7 +185,7 @@ namespace DummyClient
             //_position = _linkedEntity.Position.Value;
             //_position += _moveDir * dt * _moveSpeed;
             //_linkedEntity.Velocity.Value = _moveDir * _moveSpeed;
-            SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket()));
+            SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_linkedEntity.UpdateDataTablePacket_Client()));
             _linkedEntity.ClearDataTablePacket();
         }
 

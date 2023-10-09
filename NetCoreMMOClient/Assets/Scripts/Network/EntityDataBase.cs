@@ -3,6 +3,7 @@ using NetCoreMMOServer.Packet;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace NetCoreMMOServer.Network
 {
@@ -14,11 +15,17 @@ namespace NetCoreMMOServer.Network
         private EntityDataTable _initDataTablePacket;
         private EntityDataTable _updateDataTablePacket;
         private EntityDataTable _disposeDataTablePacket;
+
         protected List<ISyncData> _syncDatas;
+
+        protected List<ISyncData> _serverSideSyncDatas;
+        protected List<ISyncData> _clientSideSyncDatas;
 
         // Base Param
         public SyncData<bool> IsActive { get; set; } = new(true);
         public SyncData<Vector3> Position { get; set; } = new(new Vector3(0.0f, 0.0f, 0.0f));
+        public SyncData<Quaternion> Rotation = new(new Quaternion());
+        public SyncData<bool> IsTeleport = new(true);
         public SyncData<Vector3> Velocity { get; set; } = new(new Vector3(0.0f, 0.0f, 0.0f));
 
         public EntityDataBase(EntityType entityType = EntityType.None)
@@ -34,6 +41,20 @@ namespace NetCoreMMOServer.Network
             {
                 IsActive,
                 Position,
+                Velocity,
+            };
+
+            _serverSideSyncDatas = new(32)
+            {
+                IsActive,
+                Position,
+                Rotation,
+                IsTeleport,
+            };
+
+            _clientSideSyncDatas = new(32)
+            {
+                Rotation,
                 Velocity,
             };
 
@@ -72,7 +93,7 @@ namespace NetCoreMMOServer.Network
             return _initDataTablePacket;
         }
 
-        public EntityDataTable UpdateDataTablePacket()
+        public EntityDataTable UpdateDataTablePacket_Server()
         {
             if (_updateDataTablePacket.IsCashed)
             {
@@ -80,12 +101,34 @@ namespace NetCoreMMOServer.Network
             }
 
             _updateDataTablePacket.IsCashed = true;
-            for (byte i = 0; i < _syncDatas.Count; ++i)
+            //_position.Value = Transform.Position;
+            //_rotation.Value = Transform.Rotation;
+            for (byte i = 0; i < _serverSideSyncDatas.Count; ++i)
             {
-                if (_syncDatas[i].IsDirty)
+                if (_serverSideSyncDatas[i].IsDirty)
                 {
-                    _updateDataTablePacket.DataTable.TryAdd(i, _syncDatas[i]);
-                    _syncDatas[i].IsDirty = false;
+                    _updateDataTablePacket.DataTable.TryAdd(i, _serverSideSyncDatas[i]);
+                    _serverSideSyncDatas[i].IsDirty = false;
+                }
+            }
+
+            return _updateDataTablePacket;
+        }
+
+        public EntityDataTable UpdateDataTablePacket_Client()
+        {
+            if (_updateDataTablePacket.IsCashed)
+            {
+                return _updateDataTablePacket;
+            }
+
+            _updateDataTablePacket.IsCashed = true;
+            for (byte i = 0; i < _clientSideSyncDatas.Count; ++i)
+            {
+                if (_clientSideSyncDatas[i].IsDirty)
+                {
+                    _updateDataTablePacket.DataTable.TryAdd(i, _clientSideSyncDatas[i]);
+                    _clientSideSyncDatas[i].IsDirty = false;
                 }
             }
 
@@ -106,16 +149,42 @@ namespace NetCoreMMOServer.Network
             _updateDataTablePacket.IsCashed = false;
         }
 
-        public void LoadDataTablePacket(EntityDataTable loadDataTable)
+        public void LoadDataTablePacket_Server(EntityDataTable loadDataTable)
         {
             foreach (var kvp in loadDataTable.DataTable)
             {
-                if (kvp.Key < 0 || kvp.Key > _syncDatas.Count)
+                if (kvp.Key < 0 || kvp.Key > _clientSideSyncDatas.Count)
                 {
                     Console.WriteLine("Error:: Not Found key");
                     continue;
                 }
-                _syncDatas[kvp.Key].SetValue(kvp.Value);
+                _clientSideSyncDatas[kvp.Key].SetValue(kvp.Value);
+            }
+        }
+
+        public void LoadDataTablePacket_Client(EntityDataTable loadDataTable)
+        {
+            foreach (var kvp in loadDataTable.DataTable)
+            {
+                if (kvp.Key < 0 || kvp.Key > _serverSideSyncDatas.Count)
+                {
+                    Console.WriteLine("Error:: Not Found key");
+                    continue;
+                }
+                _serverSideSyncDatas[kvp.Key].SetValue(kvp.Value);
+            }
+            //Transform.Position = _position.Value;
+            //Transform.Rotation = _rotation.Value;
+        }
+        public void ClearDataTableDirty()
+        {
+            foreach (var syncData in _serverSideSyncDatas)
+            {
+                syncData.IsDirty = false;
+            }
+            foreach (var syncData in _clientSideSyncDatas)
+            {
+                syncData.IsDirty = false;
             }
         }
     }

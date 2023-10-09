@@ -50,6 +50,9 @@ public class Entity : MonoBehaviour
     private Vector3 _hitNormal;
     private GroundModificationPacket _groundModificationPacket;
 
+    [field: SerializeField]
+    private Collider _collider;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -59,12 +62,18 @@ public class Entity : MonoBehaviour
             _renderer.material = _mineMaterial;
             _groundBoxLayerMask = 1 << LayerMask.NameToLayer("GroundBox");
             _groundModificationPacket = new GroundModificationPacket();
+            _collider.enabled = false;
         }
         else
         {
-            _lastPosition = transform.position;
-            _destinationInfo = (transform.position, 1.0f);
+            //Init();
         }
+    }
+
+    public void Init()
+    {
+        _lastPosition = transform.position;
+        _destinationInfo = (transform.position, 1.0f);
     }
 
     // Update is called once per frame
@@ -92,6 +101,7 @@ public class Entity : MonoBehaviour
         Debug.Log($"Y: {_yRotate}, X: {_xRotate}");
         _xRotate = Mathf.Clamp(_xRotate, -90f, 90f);
         transform.rotation = Quaternion.Euler(new Vector3(0f, _yRotate, 0f));
+        EntityData.Rotation.Value = transform.rotation;
 
         Camera.main.transform.localRotation = Quaternion.Euler(new Vector3(_xRotate, 0f, 0f));
     }
@@ -120,16 +130,20 @@ public class Entity : MonoBehaviour
         {
             if (_jumpTimer >= _jumpDelay)
             {
-                isJump = true;
                 _jumpTimer = 0.0f;
+                if (EntityData is PlayerEntity playerEntity)
+                {
+                    playerEntity.IsJump.Value = true;
+                    playerEntity.IsJump.IsDirty = true;
+                }
             }
         }
 
-        EntityData.Velocity.Value = transform.rotation * dir.normalized * _moveSpeed + Vector3.up * EntityData.Velocity.Value.y;
-        if (isJump)
-        {
-            EntityData.Velocity.Value = new Vector3(EntityData.Velocity.Value.x, _jumpPower, EntityData.Velocity.Value.z);
-        }
+        EntityData.Velocity.Value = transform.rotation * dir.normalized * _moveSpeed;// + Vector3.up * EntityData.Velocity.Value.y;
+        //if (isJump)
+        //{
+        //    EntityData.Velocity.Value = new Vector3(EntityData.Velocity.Value.x, _jumpPower, EntityData.Velocity.Value.z);
+        //}
     }
 
     public void InventoryUpdate()
@@ -148,49 +162,57 @@ public class Entity : MonoBehaviour
 
     public void EntityPacketUpdate()
     {
-        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(EntityData.UpdateDataTablePacket()));
+        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(EntityData.UpdateDataTablePacket_Client())); ;
         EntityData.ClearDataTablePacket();
     }
 
     public void MouseUpdate()
     {
         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-        RaycastHit hitData;
+        Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 100, Color.red);
 
         if (!(EntityData is PlayerEntity playerEntity))
         {
             return;
         }
 
-        if (Physics.Raycast(ray, out hitData, 1000, _groundBoxLayerMask))
-        {
-            _hitGroundBox = hitData.collider.gameObject;
-            _hitNormal = hitData.normal;
-            //worldPosition = hitData.point;
+        _hitGroundBox = null;
+        _hitNormal = Vector3.zero;
 
-            if (Input.GetMouseButtonDown(0))
+        if (Physics.Raycast(ray, out var hit, 100))
+        {
+            if(hit.transform.TryGetComponent<Entity>(out var entity))
             {
-                if (playerEntity.Inventory.TryGetCurrentItem(out Item item))
+                _hitGroundBox = entity.gameObject;
+                _hitNormal = hit.normal;
+
+                if (Input.GetMouseButtonDown(1))
                 {
-                    if (item.code == ItemCode.Block)
+                    if (playerEntity.Inventory.TryGetCurrentItem(out Item item))
                     {
-                        _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position + _hitNormal);
-                        _groundModificationPacket.IsCreate = true;
-                        Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
+                        if (item.code == ItemCode.Block)
+                        {
+                            _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position + _hitNormal);
+                            _groundModificationPacket.IsCreate = true;
+                            Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
+                            return;
+                        }
                     }
                 }
-            }
-            else if (Input.GetMouseButtonDown(1))
-            {
-                _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position);
-                _groundModificationPacket.IsCreate = false;
-                Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
+                else if (Input.GetMouseButtonDown(0))
+                {
+                    _groundModificationPacket.Position = Vector3Int.FloorToInt(_hitGroundBox.transform.position);
+                    _groundModificationPacket.IsCreate = false;
+                    Main.Instance.SendPacketMessage(MemoryPackSerializer.Serialize<IMPacket>(_groundModificationPacket));
+                    return;
+                }
             }
         }
-        else
+
+        if (Input.GetMouseButtonDown(0))
         {
-            _hitGroundBox = null;
-            _hitNormal = Vector3.zero;
+            playerEntity.HitDir.Value = transform.forward;
+            playerEntity.HitDir.IsDirty = true;
         }
     }
 
@@ -217,7 +239,11 @@ public class Entity : MonoBehaviour
             EntityData.Position.IsDirty = false;
             _isStop = false;
 
-            if (Vector3.Distance(_lastPosition, _destinationInfo.position) < _moveSpeed * Time.deltaTime * 5.0f)
+            if (EntityData.IsTeleport.IsDirty && EntityData.IsTeleport.Value)
+            {
+                _moveTimer = _destinationInfo.time;
+            }
+            else if (Vector3.Distance(_lastPosition, _destinationInfo.position) < _moveSpeed * Time.deltaTime * 5.0f)
             {
                 _moveTimer = _destinationInfo.time;
             }

@@ -72,7 +72,8 @@ namespace NetCoreMMOServer.Framework
         public ZoneChunk ZoneChunk => _zoneChunk;
         public Vector3 ZonePosition => new Vector3(_zoneCoord.X, _zoneCoord.Y, _zoneCoord.Z) * ZoneOption.ZoneSize - (ZoneOption.ZoneCountXYZ - Vector3.One) * ZoneOption.ZoneSize * 0.5f;
 
-        //public List<EntityDataBase> AddAroundEntities => _aroundEntities;
+        public ZoneSimulator PhysicsSimulator => _physicsSimulator;
+        public List<NetEntity> AroundEntities => _aroundEntities;
 
         public Zone(Vector3Int ZoneCoord, Zone[,,] ZoneGridPointer)
         {
@@ -116,6 +117,7 @@ namespace NetCoreMMOServer.Framework
                         foreach (var entity in _zoneGridPointer[x, y, z]._currentEntities)
                         {
                             _physicsSimulator.AddEntity(entity);
+                            _aroundEntities.Add(entity);
                         }
                         //foreach (var entity in _zoneGridPointer[x, y, z]._addEntities)
                         //{
@@ -189,7 +191,7 @@ namespace NetCoreMMOServer.Framework
             {
                 if (entity.EntityType == EntityType.Block)
                 {
-                    Vector3 blockPosition = entity.Position.Value - ZonePosition + (ZoneOption.ZoneSize - Vector3.One) * 0.5f;
+                    Vector3 blockPosition = entity.Transform.Position - ZonePosition + (ZoneOption.ZoneSize - Vector3.One) * 0.5f;
                     Vector3Int blockCoord = new Vector3Int(blockPosition);
                     _zoneChunk.chunks[blockCoord.X, blockCoord.Y, blockCoord.Z] = BlockType.Block;
                 }

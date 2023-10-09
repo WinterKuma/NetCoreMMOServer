@@ -41,6 +41,7 @@ namespace NetCoreMMOServer.Network.Components.Contents
 
         public List<SyncData<int>> Items => _items;
         public SyncData<int> SelectSlotIndex => _selectSlotIndex;
+        public SyncData<int> SelectSlotItem => _items[_selectSlotIndex.Value];
 
         public bool AddItem(ItemCode code, int count)
         {

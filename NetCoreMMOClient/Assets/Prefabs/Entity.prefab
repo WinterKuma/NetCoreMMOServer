@@ -183,3 +183,4 @@ MonoBehaviour:
   _mineMaterial: {fileID: 2100000, guid: b7e438eaa79db7c4ca9a4918c7cc7a57, type: 2}
   _screenRotateSpeedX: 8
   _screenRotateSpeedY: 8
+  _collider: {fileID: 4719380124522476487}

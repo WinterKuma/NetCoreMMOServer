@@ -1,5 +1,6 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Utility;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -68,8 +69,14 @@ namespace NetCoreMMOServer.Packet
         {
             if (syncData is SyncData<T> data)
             {
-                Value = data.Value;
+                ForceSetValue(data.Value);
             }
+        }
+
+        public void ForceSetValue(T value)
+        {
+            _value = value;
+            _dirtyFlag = true;
         }
     }
 

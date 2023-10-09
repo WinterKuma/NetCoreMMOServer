@@ -148,6 +148,11 @@ namespace NetCoreMMOServer.Framework
 
                     ProcessConnectUser();
 
+                    foreach (var entity in _entityTable)
+                    {
+                        entity.Value.ClearDataTableDirty();
+                    }
+
                     var packetQueue = _packetQueueSwapChain.Swap();
                     while (packetQueue.Count > 0)
                     {
@@ -196,13 +201,13 @@ namespace NetCoreMMOServer.Framework
                     foreach (var entity in _entityTable.Values)
                     {
                         SetZone(entity);
+                        entity.ClearDataTablePacket();
                     }
 
                     foreach (var user in _userList)
                     {
                         user.WritePacket();
                         user.SendAsync(user.PacketBufferWriter.GetFilledMemory()).ConfigureAwait(false);
-                        user.LinkedEntity?.ClearDataTablePacket();
                     }
 
                     foreach (var zone in _zones)
@@ -328,7 +333,7 @@ namespace NetCoreMMOServer.Framework
 
         protected virtual void SetZone(NetEntity entity)
         {
-            Vector3 pos = entity.Position.Value;
+            Vector3 pos = entity.Transform.Position;
             if (pos.X > ZoneOption.TotalZoneHalfWidth ||
                 pos.Y > ZoneOption.TotalZoneHalfHeight ||
                 pos.Z > ZoneOption.TotalZoneHalfDepth ||
@@ -337,13 +342,7 @@ namespace NetCoreMMOServer.Framework
                 pos.Z < -ZoneOption.TotalZoneHalfDepth)
             {
                 entity.Transform.Position = Vector3.Zero;
-                entity.Position.Value = Vector3.Zero;
-                entity.Position.IsDirty = true;
-                entity.Velocity.Value = Vector3.UnitY;
-                entity.Velocity.IsDirty = true;
-                //entity.MoveZone(_zones[1, 1]);
-                //return;
-                pos = entity.Position.Value;
+                pos = entity.Transform.Position;
             }
 
             int x = Math.Clamp((int)((pos.X + ZoneOption.TotalZoneHalfWidth) * ZoneOption.InverseZoneWidth), 0, ZoneOption.ZoneCountX - 1);
@@ -361,7 +360,8 @@ namespace NetCoreMMOServer.Framework
             }
 
             entity = entityPool.Get<T>();
-            entity.Transform.Position = position;
+            //entity.Transform.Position = position;
+            entity.Teleport(position);
 
             if (!_entityObjectPoolTable.TryAdd(entity, entityPool))
             {

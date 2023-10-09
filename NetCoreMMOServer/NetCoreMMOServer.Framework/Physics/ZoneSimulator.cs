@@ -7,20 +7,22 @@ namespace NetCoreMMOServer.Physics
     {
         private Zone _zone;
 
-        private List<Collider> _otherZoneColliders;
+        private List<ColliderComponent> _otherZoneColliderComponents;
         private List<RigidBodyComponent> _rigidBodyComponents;
+        private List<ColliderComponent> _colliderComponents;
 
         public ZoneSimulator(Zone zone)
         {
             _zone = zone;
-            _otherZoneColliders = new List<Collider>();
+            _otherZoneColliderComponents = new List<ColliderComponent>();
             _rigidBodyComponents = new List<RigidBodyComponent>();
+            _colliderComponents = new List<ColliderComponent>();
         }
 
         public new void ResetEntity()
         {
             base.ResetEntity();
-            _otherZoneColliders.Clear();
+            _otherZoneColliderComponents.Clear();
             _rigidBodyComponents.Clear();
         }
 
@@ -33,6 +35,7 @@ namespace NetCoreMMOServer.Physics
                     if (component is ColliderComponent collider)
                     {
                         _colliders.Add(collider.Collider);
+                        _colliderComponents.Add(collider);
                     }
                     if (component is RigidBodyComponent rigidbody)
                     {
@@ -47,7 +50,7 @@ namespace NetCoreMMOServer.Physics
                 {
                     if (component is ColliderComponent collider)
                     {
-                        _otherZoneColliders.Add(collider.Collider);
+                        _otherZoneColliderComponents.Add(collider);
                     }
                 }
             }
@@ -76,7 +79,7 @@ namespace NetCoreMMOServer.Physics
                 {
                     if (component is ColliderComponent collider)
                     {
-                        _otherZoneColliders.Remove(collider.Collider);
+                        _otherZoneColliderComponents.Remove(collider);
                     }
                 }
             }
@@ -99,12 +102,17 @@ namespace NetCoreMMOServer.Physics
                 {
                     rigidBody.RigidBody.Velocity += new Vector3(0.0f, currentGravity, 0.0f) + PhysicsOption.Gravity * dt;
                 }
+                else
+                {
+                    InputMovement.Y = 0;
+                    rigidBody.Owner.Velocity.Value = InputMovement;
+                }
                 //else
                 //{
                 //    rigidBody.RigidBody.Velocity = InputMovement;
                 //    rigidBody.Owner.Velocity.Value = rigidBody.Owner.Velocity.Value * new Vector3(1.0f, 0.0f, 1.0f);
                 //}
-                rigidBody.Owner.Velocity.Value = Vector3.Zero;
+                //WrigidBody.Owner.Velocity.Value = Vector3.Zero;
             }
         }
 
@@ -114,34 +122,70 @@ namespace NetCoreMMOServer.Physics
 
             foreach (var currentCollider in _colliders)
             {
-                foreach (var otherCollider in _otherZoneColliders)
+                foreach (var otherCollider in _otherZoneColliderComponents)
                 {
-                    if (!currentCollider.CheckCollision(otherCollider, out Vector3 normal, out float depth))
+                    if (!currentCollider.CheckCollision(otherCollider.Collider, out Vector3 normal, out float depth))
                     {
                         continue;
                     }
 
                     if (currentCollider.IsTrigger)
                     {
-                        currentCollider.OnTrigger(otherCollider);
+                        currentCollider.OnTrigger(otherCollider.Collider);
                     }
-                    if (otherCollider.IsTrigger)
+                    if (otherCollider.Collider.IsTrigger)
                     {
-                        otherCollider.OnTrigger(currentCollider);
+                        otherCollider.Collider.OnTrigger(currentCollider);
                     }
-                    if (currentCollider.IsTrigger || otherCollider.IsTrigger)
+                    if (currentCollider.IsTrigger || otherCollider.Collider.IsTrigger)
                     {
                         continue;
                     }
 
-                    currentCollider.OnCollider(otherCollider);
-                    otherCollider.OnCollider(currentCollider);
+                    currentCollider.OnCollider(otherCollider.Collider);
+                    otherCollider.Collider.OnCollider(currentCollider);
 
-                    Solve(currentCollider.AttachedRigidbody, otherCollider.AttachedRigidbody, normal, depth);
+                    Solve(currentCollider.AttachedRigidbody, otherCollider.Collider.AttachedRigidbody, normal, depth);
                 }
             }
         }
 
+        public bool CheckCollision(Collider collider, out Entity? entity, int layerMask)
+        {
+            entity = null;
+
+            foreach (var currentCollider in _colliderComponents)
+            {
+                if ((currentCollider.Owner.Layer & layerMask) == 0)
+                {
+                    continue;
+                }
+                
+                if (collider.CheckCollision(currentCollider.Collider, out Vector3 _, out float _))
+                {
+                    entity = currentCollider.Owner;
+                    return true;
+                }
+            }
+
+            foreach (var otherCollider in _otherZoneColliderComponents)
+            {
+                if ((otherCollider.Owner.Layer & layerMask) == 0)
+                {
+                    continue;
+                }
+
+                if (collider.CheckCollision(otherCollider.Collider, out Vector3 _, out float _))
+                {
+                    entity = otherCollider.Owner;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // MultiThreading 오류 시 참고 해볼것
         private void CurrentSolve(RigidBody? currentBody, RigidBody? otherBody, in Vector3 normal, in float depth)
         {
             bool bodyAStatic = currentBody?.IsStatic ?? true;

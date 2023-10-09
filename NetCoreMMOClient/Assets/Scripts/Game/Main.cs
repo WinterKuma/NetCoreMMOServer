@@ -48,6 +48,11 @@ public class Main : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        foreach (var entity in _entityDictionary)
+        {
+            entity.Value.EntityData.ClearDataTableDirty();
+        }
+
         var packetBuffer = _packetBufferSwapChain.Swap();
         foreach (var packet in packetBuffer)
         {
@@ -103,8 +108,10 @@ public class Main : MonoBehaviour
                     {
                         SetLinkEntity(_entityInfo);
                     }
+                    break;
                 }
-                _entityDictionary[entityInfo].EntityData.LoadDataTablePacket(entityDataTablePacket);
+
+                _entityDictionary[entityInfo].EntityData.LoadDataTablePacket_Client(entityDataTablePacket);
                 if (!_entityDictionary[entityInfo].EntityData.IsActive.Value)
                 {
                     if (_entityDictionary.Remove(entityInfo, out var entity))
@@ -153,6 +160,11 @@ public class Main : MonoBehaviour
                 throw new Exception();
         }
         entity.EntityData.Init(entityDataTable.EntityInfo);
+        entity.EntityData.LoadDataTablePacket_Client(entityDataTable);
+        entity.transform.position = entity.EntityData.Position.Value;
+        entity.transform.rotation = entity.EntityData.Rotation.Value;
+        entity.Init();
+
         return entity;
     }
 

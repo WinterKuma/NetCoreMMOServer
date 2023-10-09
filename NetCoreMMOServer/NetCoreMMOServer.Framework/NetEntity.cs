@@ -12,7 +12,9 @@ namespace NetCoreMMOServer.Framework
         private EntityDataTable _initDataTablePacket;
         private EntityDataTable _updateDataTablePacket;
         private EntityDataTable _disposeDataTablePacket;
-        protected List<ISyncData> _syncDatas;
+
+        protected List<ISyncData> _serverSideSyncDatas;
+        protected List<ISyncData> _clientSideSyncDatas;
 
         // Zone Data
         private SyncData<Zone?> _currentZone;
@@ -20,9 +22,15 @@ namespace NetCoreMMOServer.Framework
         // Base Param
         public SyncData<bool> IsActive = new(true);
 
-        // TODO(Think) :: Private Position
-        public SyncData<Vector3> Position = new(new Vector3(0.0f, 0.0f, 0.0f));
-        public SyncData<Vector3> Velocity = new(new Vector3(0.0f, 0.0f, 0.0f));
+        // Movement Server Side Param
+        private SyncData<Vector3> _position = new(new Vector3());
+        private SyncData<Quaternion> _rotation = new(new Quaternion());
+        public SyncData<bool> IsTeleport = new(true);
+
+
+        // Movement Client Side Param
+        public SyncData<Vector3> Velocity = new(new Vector3());
+        //public SyncData<Vector3> MoveDir = new(new Vector3());
 
         // Component System
 
@@ -38,10 +46,17 @@ namespace NetCoreMMOServer.Framework
 
             _currentZone = new();
 
-            _syncDatas = new(32)
+            _serverSideSyncDatas = new(32)
             {
                 IsActive,
-                Position,
+                _position,
+                _rotation,
+                IsTeleport,
+            };
+
+            _clientSideSyncDatas = new(32)
+            {
+                _rotation,
                 Velocity,
             };
 
@@ -60,8 +75,6 @@ namespace NetCoreMMOServer.Framework
             _updateDataTablePacket.EntityInfo = _entityInfo;
             _disposeDataTablePacket.EntityInfo = _entityInfo;
             _currentZone.Value = null;
-
-            //components.Clear();
         }
         public void Init(uint entityID, EntityType entityType)
         {
@@ -75,7 +88,14 @@ namespace NetCoreMMOServer.Framework
 
         public override void Update(float dt)
         {
-            //Transform.Position = Position.Value;
+
+        }
+
+        public void Teleport(Vector3 position)
+        {
+            Transform.Position = position;
+            _position.ForceSetValue(position);
+            IsTeleport.ForceSetValue(true);
         }
 
         public EntityDataTable InitDataTablePacket()
@@ -86,15 +106,15 @@ namespace NetCoreMMOServer.Framework
             }
 
             _initDataTablePacket.IsCashed = true;
-            for (byte i = 0; i < _syncDatas.Count; ++i)
+            for (byte i = 0; i < _serverSideSyncDatas.Count; ++i)
             {
-                _initDataTablePacket.DataTable.TryAdd(i, _syncDatas[i]);
+                _initDataTablePacket.DataTable.TryAdd(i, _serverSideSyncDatas[i]);
             }
 
             return _initDataTablePacket;
         }
 
-        public EntityDataTable UpdateDataTablePacket()
+        public EntityDataTable UpdateDataTablePacket_Server()
         {
             if (_updateDataTablePacket.IsCashed)
             {
@@ -102,13 +122,34 @@ namespace NetCoreMMOServer.Framework
             }
 
             _updateDataTablePacket.IsCashed = true;
-            Position.Value = Transform.Position;
-            for (byte i = 0; i < _syncDatas.Count; ++i)
+            _position.Value = Transform.Position;
+            _rotation.Value = Transform.Rotation;
+            for (byte i = 0; i < _serverSideSyncDatas.Count; ++i)
             {
-                if (_syncDatas[i].IsDirty)
+                if (_serverSideSyncDatas[i].IsDirty)
                 {
-                    _updateDataTablePacket.DataTable.TryAdd(i, _syncDatas[i]);
-                    _syncDatas[i].IsDirty = false;
+                    _updateDataTablePacket.DataTable.TryAdd(i, _serverSideSyncDatas[i]);
+                    _serverSideSyncDatas[i].IsDirty = false;
+                }
+            }
+
+            return _updateDataTablePacket;
+        }
+
+        public EntityDataTable UpdateDataTablePacket_Client()
+        {
+            if (_updateDataTablePacket.IsCashed)
+            {
+                return _updateDataTablePacket;
+            }
+
+            _updateDataTablePacket.IsCashed = true;
+            for (byte i = 0; i < _clientSideSyncDatas.Count; ++i)
+            {
+                if (_clientSideSyncDatas[i].IsDirty)
+                {
+                    _updateDataTablePacket.DataTable.TryAdd(i, _clientSideSyncDatas[i]);
+                    _clientSideSyncDatas[i].IsDirty = false;
                 }
             }
 
@@ -129,16 +170,43 @@ namespace NetCoreMMOServer.Framework
             _updateDataTablePacket.IsCashed = false;
         }
 
-        public void LoadDataTablePacket(EntityDataTable loadDataTable)
+        public void LoadDataTablePacket_Server(EntityDataTable loadDataTable)
         {
             foreach (var kvp in loadDataTable.DataTable)
             {
-                if (kvp.Key < 0 || kvp.Key > _syncDatas.Count)
+                if (kvp.Key < 0 || kvp.Key > _clientSideSyncDatas.Count)
                 {
                     Console.WriteLine("Error:: Not Found key");
                     continue;
                 }
-                _syncDatas[kvp.Key].SetValue(kvp.Value);
+                _clientSideSyncDatas[kvp.Key].SetValue(kvp.Value);
+            }
+        }
+
+        public void LoadDataTablePacket_Client(EntityDataTable loadDataTable)
+        {
+            foreach (var kvp in loadDataTable.DataTable)
+            {
+                if (kvp.Key < 0 || kvp.Key > _serverSideSyncDatas.Count)
+                {
+                    Console.WriteLine("Error:: Not Found key");
+                    continue;
+                }
+                _serverSideSyncDatas[kvp.Key].SetValue(kvp.Value);
+            }
+            Transform.Position = _position.Value;
+            Transform.Rotation = _rotation.Value;
+        }
+
+        public void ClearDataTableDirty()
+        {
+            foreach (var syncData in _serverSideSyncDatas)
+            {
+                syncData.IsDirty = false;
+            }
+            foreach (var syncData in _clientSideSyncDatas)
+            {
+                syncData.IsDirty = false;
             }
         }
 

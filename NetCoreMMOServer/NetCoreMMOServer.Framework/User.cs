@@ -178,7 +178,11 @@ namespace NetCoreMMOServer.Framework
 
             foreach (var entity in _updateEntityList)
             {
-                MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_packetBufferWriter, entity.UpdateDataTablePacket());
+                EntityDataTable dataTable = entity.UpdateDataTablePacket_Server();
+                if (dataTable.DataTable.Count > 0)
+                {
+                    MemoryPackSerializer.Serialize<IMPacket, PacketBufferWriter>(_packetBufferWriter, dataTable);
+                }
             }
 
             foreach (var entity in _initEntityList)

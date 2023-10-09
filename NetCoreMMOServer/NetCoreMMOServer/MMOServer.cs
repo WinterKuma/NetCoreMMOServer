@@ -90,7 +90,7 @@ namespace NetCoreMMOServer
                     {
                         return false;
                     }
-                    Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
+                    Vector3Int gPos = new Vector3Int(entity.Transform.Position + ZoneOption.TotalZoneHalfSize);
                     _groundEntities[gPos.X, gPos.Y, gPos.Z] = null;
                     break;
 
@@ -263,7 +263,7 @@ namespace NetCoreMMOServer
                         Console.WriteLine($"Error:: Not Contain EntityInfo {entityDataTablePacket.EntityInfo.EntityID}");
                         break;
                     }
-                    EntityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket(entityDataTablePacket);
+                    EntityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket_Server(entityDataTablePacket);
                     break;
 
                 case GroundModificationPacket groundModificationPacket:
@@ -288,7 +288,24 @@ namespace NetCoreMMOServer
                                 }
                                 else
                                 {
-                                    player.Inventory.RemoveItem(ItemCode.Block, 1);
+                                    SyncData<int> selectSlot = player.Inventory.SelectSlotItem;
+                                    Item item = selectSlot.Value.GetItem();
+                                    if (item.code == ItemCode.Block && item.count > 0)
+                                    {
+                                        item.count--;
+                                        if (item.count == 0)
+                                        {
+                                            item.code = ItemCode.None;
+                                        }
+                                        selectSlot.Value = item.buffer;
+                                    }
+                                    else
+                                    {
+                                        if (!player.Inventory.RemoveItem(ItemCode.Block, 1))
+                                        {
+                                            Console.WriteLine($"Error:: Don't Have Item {ItemCode.Block}, Player : {player}");
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -345,7 +362,7 @@ namespace NetCoreMMOServer
 
         protected override void SetZone(NetEntity entity)
         {
-            Vector3 pos = entity.Position.Value;
+            Vector3 pos = entity.Transform.Position;
             if (pos.X > ZoneOption.TotalZoneHalfWidth ||
                 pos.Y > ZoneOption.TotalZoneHalfHeight ||
                 pos.Z > ZoneOption.TotalZoneHalfDepth ||
@@ -354,13 +371,7 @@ namespace NetCoreMMOServer
                 pos.Z < -ZoneOption.TotalZoneHalfDepth)
             {
                 entity.Transform.Position = Vector3.Zero;
-                entity.Position.Value = Vector3.Zero;
-                entity.Position.IsDirty = true;
-                entity.Velocity.Value = Vector3.UnitY;
-                entity.Velocity.IsDirty = true;
-                //entity.MoveZone(_zones[1, 1]);
-                //return;
-                pos = entity.Position.Value;
+                pos = entity.Transform.Position;
 
                 if (entity is PlayerEntity player)
                 {

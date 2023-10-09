@@ -8,15 +8,24 @@ namespace NetCoreMMOServer.Contents.Entity
 {
     public partial class PlayerEntity : NetEntity
     {
+        // Server Side
         public SyncData<int> Hp;
         public SyncData<int> Power;
 
+        // Client Side
+        public SyncData<bool> IsJump;
+        public SyncData<Vector3> HitDir;
+
+        // Component
         public Inventory Inventory;
+
+        // Etc
+        //public List<ColliderComponent> hitCollider;
+        private SphereCollider attackCollider;
 
         public PlayerEntity()
         {
-            //_syncDatas.Add(power);
-            //_syncDatas.Add(hp);
+            _layer = 1;
 
             RigidBodyComponent rigidBody = new();
             rigidBody.RigidBody.Transform = Transform;
@@ -37,18 +46,48 @@ namespace NetCoreMMOServer.Contents.Entity
             Hp = new(10);
             Power = new(1);
 
-            _syncDatas.Add(Hp);
-            _syncDatas.Add(Power);
+            _serverSideSyncDatas.Add(Hp);
+            _serverSideSyncDatas.Add(Power);
 
             Inventory = new(9);
             foreach (var item in Inventory.Items)
             {
-                _syncDatas.Add(item);
+                _serverSideSyncDatas.Add(item);
             }
             Inventory.Items[0].Value = new Item() { code = ItemCode.Block, count = 10 }.buffer;
-            _syncDatas.Add(Inventory.SelectSlotIndex);
+            _clientSideSyncDatas.Add(Inventory.SelectSlotIndex);
+
+            IsJump = new(false);
+            _clientSideSyncDatas.Add(IsJump);
+
+            HitDir = new(new Vector3());
+            _clientSideSyncDatas.Add(HitDir);
+
+            attackCollider = new SphereCollider(Transform);
+            attackCollider.Offset = Vector3.Zero;
+            attackCollider.Radius = 0.5f;
 
             Init(new EntityInfo() { EntityID = EntityInfo.EntityID, EntityType = EntityType.Player });
+        }
+
+        public override void Update(float dt)
+        {
+            if (IsJump.IsDirty && IsJump.Value)
+            {
+                Velocity.Value += new Vector3(0.0f, 6.0f, 0.0f);
+            }
+            if (HitDir.IsDirty)
+            {
+                attackCollider.Offset = HitDir.Value * 1.5f;
+                if (CurrentZone.Value!.PhysicsSimulator.CheckCollision(attackCollider, out Framework.Entity? entity, Layer))
+                {
+                    if (entity is PlayerEntity player)
+                    {
+                        player.GetDamage(Power.Value);
+                    }
+                }
+                 
+            }
         }
 
         public void GetDamage(int damage)
@@ -57,7 +96,7 @@ namespace NetCoreMMOServer.Contents.Entity
             if(Hp.Value <= 0)
             {
                 // TODO :: Dead
-                Transform.Position = Vector3.Zero;
+                Teleport(Vector3.Zero);
                 Hp.Value = 10;
             }
         }

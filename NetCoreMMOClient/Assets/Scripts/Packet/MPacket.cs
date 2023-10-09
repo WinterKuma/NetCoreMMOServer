@@ -72,6 +72,7 @@ namespace NetCoreMMOServer.Packet
             if(syncData is SyncData<T> data)
             {
                 Value = data.Value;
+                _dirtyFlag = true;
             }
         }
     }
