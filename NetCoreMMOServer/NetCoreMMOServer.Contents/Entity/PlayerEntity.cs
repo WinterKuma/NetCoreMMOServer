@@ -21,25 +21,27 @@ namespace NetCoreMMOServer.Contents.Entity
 
         // Etc
         //public List<ColliderComponent> hitCollider;
-        private SphereCollider attackCollider;
+        private SphereCollider _attackCollider;
+
+        private RigidBodyComponent _rigidBodyComponent;
 
         public PlayerEntity()
         {
             _layer = 1;
 
-            RigidBodyComponent rigidBody = new();
-            rigidBody.RigidBody.Transform = Transform;
+            _rigidBodyComponent = new();
+            _rigidBodyComponent.RigidBody.Transform = Transform;
 
-            SphereCollider sphereCollider = new SphereCollider(Transform, rigidBody.RigidBody);
+            SphereCollider sphereCollider = new SphereCollider(Transform, _rigidBodyComponent.RigidBody);
             sphereCollider.Offset = Vector3.Zero;
             sphereCollider.Radius = 0.5f;
 
             ColliderComponent collider = new(sphereCollider);
 
-            rigidBody.SetEntityDataBase(this);
+            _rigidBodyComponent.SetEntityDataBase(this);
             collider.SetEntityDataBase(this);
 
-            Components.Add(rigidBody);
+            Components.Add(_rigidBodyComponent);
             Components.Add(collider);
             //components.Add(inventory);
 
@@ -63,26 +65,35 @@ namespace NetCoreMMOServer.Contents.Entity
             HitDir = new(new Vector3());
             _clientSideSyncDatas.Add(HitDir);
 
-            attackCollider = new SphereCollider(Transform);
-            attackCollider.Offset = Vector3.Zero;
-            attackCollider.Radius = 0.5f;
+            _attackCollider = new SphereCollider(Transform);
+            _attackCollider.Offset = Vector3.Zero;
+            _attackCollider.Radius = 0.5f;
 
             Init(new EntityInfo() { EntityID = EntityInfo.EntityID, EntityType = EntityType.Player });
         }
 
+        public RigidBodyComponent RigidBodyComponent => _rigidBodyComponent;
+
         public override void Update(float dt)
         {
+            RigidBodyComponent.RigidBody.Velocity = new Vector3(Velocity.Value.X, RigidBodyComponent.RigidBody.Velocity.Y, Velocity.Value.Z);
             if (IsJump.IsDirty && IsJump.Value)
             {
-                Velocity.Value += new Vector3(0.0f, 6.0f, 0.0f);
+                RigidBodyComponent.RigidBody.Velocity += new Vector3(0.0f, 6.0f, 0.0f);
             }
+
+
             if (HitDir.IsDirty)
             {
-                attackCollider.Offset = HitDir.Value * 1.5f;
-                if (CurrentZone.Value!.PhysicsSimulator.CheckCollision(attackCollider, out Framework.Entity? entity, Layer))
+                _attackCollider.Offset = HitDir.Value * 1.5f;
+                if (CurrentZone.Value!.PhysicsSimulator.CheckCollision(_attackCollider, out Framework.Entity? entity, Layer))
                 {
                     if (entity is PlayerEntity player)
                     {
+                        Vector3 dir = player.Transform.Position - Transform.Position;
+                        dir.Y = 0.0f;
+                        dir = dir / dir.Length();
+                        player.RigidBodyComponent.RigidBody.NextVelocity += dir * 8.0f + Vector3.UnitY * 3.0f;
                         player.GetDamage(Power.Value);
                     }
                 }

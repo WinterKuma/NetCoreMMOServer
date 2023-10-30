@@ -94,25 +94,12 @@ namespace NetCoreMMOServer.Physics
                     continue;
                 }
                 // gravity
-                float currentGravity = rigidBody.RigidBody.Velocity.Y;
-                Vector3 InputMovement = rigidBody.Owner.Velocity.Value;
-
-                rigidBody.RigidBody.Velocity = InputMovement;
-                if (InputMovement.Y == 0.0f)
-                {
-                    rigidBody.RigidBody.Velocity += new Vector3(0.0f, currentGravity, 0.0f) + PhysicsOption.Gravity * dt;
-                }
-                else
-                {
-                    InputMovement.Y = 0;
-                    rigidBody.Owner.Velocity.Value = InputMovement;
-                }
-                //else
-                //{
-                //    rigidBody.RigidBody.Velocity = InputMovement;
-                //    rigidBody.Owner.Velocity.Value = rigidBody.Owner.Velocity.Value * new Vector3(1.0f, 0.0f, 1.0f);
-                //}
-                //WrigidBody.Owner.Velocity.Value = Vector3.Zero;
+                rigidBody.RigidBody.PrevVelcotiy = rigidBody.RigidBody.Velocity;
+                //float currentGravity = rigidBody.RigidBody.Velocity.Y;
+                Vector3 velocity = rigidBody.RigidBody.Velocity + rigidBody.RigidBody.NextVelocity;
+                velocity += PhysicsOption.Gravity * dt;
+                rigidBody.RigidBody.Velocity = velocity;
+                rigidBody.RigidBody.NextVelocity = new Vector3(0.0f, 0.0f, 0.0f);
             }
         }
 

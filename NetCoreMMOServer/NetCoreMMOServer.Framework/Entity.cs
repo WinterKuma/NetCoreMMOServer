@@ -8,6 +8,7 @@ namespace NetCoreMMOServer.Framework
     {
         protected readonly Transform _transform = new Transform();
         protected readonly List<Component> _components;
+        protected int _layer = 0;
 
         public Entity()
         {
@@ -19,6 +20,7 @@ namespace NetCoreMMOServer.Framework
 
         public Transform Transform => _transform;
         public List<Component> Components => _components;
+        public int Layer => _layer;
 
         public virtual void Update(float dt)
         {
@@ -38,6 +40,38 @@ namespace NetCoreMMOServer.Framework
         public virtual void OnCollisionEnter()
         {
 
+        }
+
+        public T? GetComponent<T>() where T : Component
+        {
+            T? value = null;
+
+            foreach (var component in _components)
+            {
+                if (component is T t)
+                {
+                    value = t;
+                    break;
+                }
+            }
+
+            return value;
+        }
+
+        public bool TryGetComponent<T>(out T? value) where T : Component
+        {
+            value = null;
+
+            foreach (var component in _components)
+            {
+                if (component is T t)
+                {
+                    value = t;
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

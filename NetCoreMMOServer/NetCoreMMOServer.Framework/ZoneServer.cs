@@ -33,7 +33,6 @@ namespace NetCoreMMOServer.Framework
         // Zone Control
         private readonly List<Zone> _zoneList;
         private readonly Zone[,,] _zones;
-        //private EntityDataBase?[,,] _groundEntities;
 
         // Entity Control
         private readonly ConcurrentDictionary<Type, ConcurrentPool<NetEntity>> _entityPoolTable;
@@ -150,7 +149,7 @@ namespace NetCoreMMOServer.Framework
 
                     foreach (var entity in _entityTable)
                     {
-                        entity.Value.ClearDataTableDirty();
+                        entity.Value.ClearSyncDatasDirty();
                     }
 
                     var packetQueue = _packetQueueSwapChain.Swap();
@@ -171,12 +170,14 @@ namespace NetCoreMMOServer.Framework
                         _deltaAcc = 1;
                     }
 
+                    // Multi Thread
                     Parallel.ForEach(_zoneList, zone =>
                     {
                         zone.Update(_dt);
                         zone.FixedUpdate(_dt);
                     });
 
+                    // Single Thread
                     //foreach (var zone in _zoneList)
                     //{
                     //    zone.Update(_dt);
@@ -185,10 +186,13 @@ namespace NetCoreMMOServer.Framework
 
                     while (_deltaAcc >= PhysicsOption.IntervalDelta)
                     {
+                        // Multi Thread
                         Parallel.ForEach(_zoneList, zone =>
                         {
                             zone.Step(PhysicsOption.IntervalDelta);
                         });
+
+                        // Single Thread
                         //foreach (var zone in _zoneList)
                         //{
                         //    zone.Step(PhysicsOption.IntervalDelta);
@@ -238,7 +242,6 @@ namespace NetCoreMMOServer.Framework
         {
             _isRun = false;
         }
-
 
         // User Connect / Disconnect
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

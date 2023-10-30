@@ -198,7 +198,7 @@ namespace NetCoreMMOServer.Framework
             Transform.Rotation = _rotation.Value;
         }
 
-        public void ClearDataTableDirty()
+        public void ClearSyncDatasDirty()
         {
             foreach (var syncData in _serverSideSyncDatas)
             {
