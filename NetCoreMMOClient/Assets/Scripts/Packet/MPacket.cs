@@ -11,6 +11,7 @@ namespace NetCoreMMOServer.Packet
     [MemoryPackUnion(1, typeof(EntityDataTable))]
     [MemoryPackUnion(2, typeof(SetLinkedEntityPacket))]
     [MemoryPackUnion(3, typeof(GroundModificationPacket))]
+    [MemoryPackUnion(4, typeof(RPCPacketProtocol))]
     public partial interface IMPacket
     {
         //[MemoryPackOnDeserializing]
@@ -160,5 +161,33 @@ namespace NetCoreMMOServer.Packet
     {
         public Vector3Int Position { get; set; }
         public bool IsCreate { get; set; }
+    }
+
+
+    [MemoryPackable]
+    public partial class RPCPacketProtocol : IMPacket
+    {
+        public IRPCPacket RPCPacket { get; set; }
+    }
+
+
+    [MemoryPackable]
+    [MemoryPackUnion(1, typeof(RPCAttackPacket))]
+    [MemoryPackUnion(2, typeof(RPCTestPacket))]
+    public partial interface IRPCPacket
+    {
+
+    }
+
+    [MemoryPackable]
+    public partial class RPCAttackPacket : IRPCPacket
+    {
+
+    }
+
+    [MemoryPackable]
+    public partial class RPCTestPacket : IRPCPacket
+    {
+        public UnityEngine.Vector3 value { get; set; } = UnityEngine.Vector3.zero;
     }
 }

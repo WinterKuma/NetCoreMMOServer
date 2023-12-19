@@ -8,6 +8,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NetCoreMMOServer.Framework\NetCoreMMOServer.Framework.csproj" />
+    <ProjectReference Include="..\NetCoreMMOServer.PacketGenerator\NetCoreMMOServer.PacketGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Client\Entity_Bases\" />
+    <Folder Include="Server\Entity_Bases\" />
   </ItemGroup>
 
 </Project>

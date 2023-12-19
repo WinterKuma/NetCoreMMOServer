@@ -1,6 +1,5 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Utility;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -10,28 +9,10 @@ namespace NetCoreMMOServer.Packet
     [MemoryPackUnion(1, typeof(EntityDataTable))]
     [MemoryPackUnion(2, typeof(SetLinkedEntityPacket))]
     [MemoryPackUnion(3, typeof(GroundModificationPacket))]
+    [MemoryPackUnion(4, typeof(RPCPacketProtocol))]
     public partial interface IMPacket
     {
-        //[MemoryPackOnDeserializing]
-        //static void ReadMPacket(ref MemoryPackReader reader, ref IMPacket? value)
-        //{
-        //    if (!reader.TryReadUnionHeader(out var tag))
-        //    {
-        //        value = default;
 
-        //        return;
-        //    }
-
-        //    switch (tag)
-        //    {
-        //        case 0:
-        //            value = PacketDtoPoolProvider.GetDtoPool<EntityDto>().GetDto();
-        //            break;
-        //        case 1:
-        //            value = PacketDtoPoolProvider.GetDtoPool<MoveDto>().GetDto();
-        //            break;
-        //    }
-        //}
     }
 
     [MemoryPackable]
@@ -176,6 +157,14 @@ namespace NetCoreMMOServer.Packet
     }
 
     [MemoryPackable]
+    public partial class RPCData
+    {
+        public EntityInfo EntityInfo { get; set; } = default;
+        public byte Id { get; set; } = 0;
+        public List<ISyncData> datas { get; set; } = new(12);
+    }
+
+    [MemoryPackable]
     public partial class SetLinkedEntityPacket : IMPacket
     {
         public EntityInfo EntityInfo { get; set; }
@@ -186,5 +175,18 @@ namespace NetCoreMMOServer.Packet
     {
         public Vector3Int Position { get; set; }
         public bool IsCreate { get; set; }
+    }
+
+
+    [MemoryPackable]
+    public partial class RPCPacketProtocol : IMPacket
+    {
+        public RPCPacket RPCPacket { get; set; }
+    }
+
+    [MemoryPackable]
+    public abstract partial class RPCPacket
+    {
+
     }
 }

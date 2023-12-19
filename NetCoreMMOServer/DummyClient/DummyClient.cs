@@ -1,5 +1,6 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Contents.Entity;
+using NetCoreMMOServer.Contents.Entity.Remote;
 using NetCoreMMOServer.Framework;
 using NetCoreMMOServer.Network;
 using NetCoreMMOServer.Packet;
@@ -11,6 +12,7 @@ namespace DummyClient
     internal class DummyClient
     {
         private Client _client;
+        private User _user;
         private bool _isSpawn = false;
         private int _clientID = -1;
         private int _userID = 0;
@@ -44,11 +46,14 @@ namespace DummyClient
             _client = new();
             _client.Received += ProcessPacket;
             this._clientID = clientID;
+
+            _user = new();
         }
 
         public void Connect(IPEndPoint serverEP)
         {
             _client.OnConnect(serverEP);
+            _user.Init(_client.Socket);
         }
 
         public void SetLinkEntity(EntityInfo entityInfo)
@@ -56,8 +61,18 @@ namespace DummyClient
             _entityInfo = entityInfo;
             if(_entityTable.ContainsKey(entityInfo))
             {
+                if(_linkedEntity != null)
+                {
+                    _linkedEntity.Owner = null;
+                }
+
                 _linkedEntity = _entityTable[entityInfo];
                 _userID = (int)_linkedEntity.EntityID;
+
+                if(_linkedEntity != null )
+                {
+                    _linkedEntity.Owner = _user;
+                }
             }
         }
 
@@ -66,7 +81,7 @@ namespace DummyClient
             switch (packet)
             {
                 case null:
-                    break;
+                    return;
 
                 case SetLinkedEntityPacket setLinkedEntityPacket:
                     SetLinkEntity(setLinkedEntityPacket.EntityInfo);
@@ -77,7 +92,7 @@ namespace DummyClient
                     {
                         if(_entityInfo == entityDataTablePacket.EntityInfo)
                         {
-                            var entity = new PlayerEntity();
+                            var entity = new Remote_PlayerEntity();
                             entity.Init(entityDataTablePacket.EntityInfo);
                             _entityTable.Add(entityDataTablePacket.EntityInfo, entity);
                             SetLinkEntity(_entityInfo);
@@ -92,14 +107,6 @@ namespace DummyClient
                     if(!_entityTable.ContainsKey(entityDataTablePacket.EntityInfo))
                     {
                         break;
-                        //var entity = new EntityDataBase();
-                        //entity.Init(entityDataTablePacket.EntityInfo);
-                        //_entityTable.Add(entityDataTablePacket.EntityInfo, entity);
-                        //if(_linkedEntity == null)
-                        //{
-                        //    // TODO :: 자기 자신만 관리하도록
-                        //    SetLinkEntity(_entityInfo);
-                        //}
                     }
                     _entityTable[entityDataTablePacket.EntityInfo].LoadDataTablePacket_Client(entityDataTablePacket);
                     if (!_entityTable[entityDataTablePacket.EntityInfo].IsActive.Value)
@@ -109,6 +116,10 @@ namespace DummyClient
                             break;
                         }
                     }
+                    break;
+
+                case RPCPacketProtocol rpcPacket:
+                    _linkedEntity.ReceiveRPC(rpcPacket.RPCPacket);
                     break;
 
                 default:
@@ -140,6 +151,12 @@ namespace DummyClient
                 }
                 else
                 {
+                    if(_linkedEntity is Remote_PlayerEntity playerEntity)
+                    {
+                        playerEntity.Attack();
+                        playerEntity.Test(_moveDir);
+                    }
+
                     _activeTimer = _random.NextSingle() * (_activeMaxTime - _activeMinTime) + _activeMinTime;
 
                     _moveDir = _random.Next(0, 8) switch

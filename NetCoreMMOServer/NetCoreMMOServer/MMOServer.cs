@@ -1,5 +1,6 @@
 ﻿using MemoryPack;
 using NetCoreMMOServer.Contents.Entity;
+using NetCoreMMOServer.Contents.Entity.Master;
 using NetCoreMMOServer.Framework;
 using NetCoreMMOServer.Network.Components.Contents;
 using NetCoreMMOServer.Packet;
@@ -37,13 +38,19 @@ namespace NetCoreMMOServer
                     if (Console.KeyAvailable)
                     {
                         ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
-                        Console.WriteLine($"눌린 키: {keyInfo.Key}");
+                        //Console.WriteLine($"눌린 키: {keyInfo.Key}");
                         if (keyInfo.Key == ConsoleKey.S)
                         {
+                            Console.WriteLine($"Zone Chunk 수동 저장...");
                             foreach (var zone in ZoneList)
                             {
                                 await SaveZoneDB(zone.ZoneCoord);
                             }
+                        }
+                        if (keyInfo.Key == ConsoleKey.E)
+                        {
+                            Console.WriteLine($"Server Off");
+                            Stop();
                         }
                     }
                 }
@@ -55,7 +62,7 @@ namespace NetCoreMMOServer
             switch (entityType)
             {
                 case EntityType.Player:
-                    if (CreateEntity<PlayerEntity>(out entity, position))
+                    if (CreateEntity<Master_PlayerEntity>(out entity, position))
                     {
 
                     }
@@ -221,31 +228,35 @@ namespace NetCoreMMOServer
 
         protected override void Initialize()
         {
-            //_ = CommandAsync();
-            for (int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
-            {
-                for (int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
-                {
-                    if (!CreateEntity(EntityType.Block, out NetEntity entity, new Vector3(x, -2f, z)))
-                    {
-                        Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
-                        continue;
-                    }
-                    //entity.Position.Value = new Vector3(x, -2f, z);
-                    //Vector3Int gPos = new Vector3Int(entity.Position.Value + ZoneOption.TotalZoneHalfSize);
-                    //_groundEntities[gPos.X, gPos.Y, gPos.Z] = entity;
-                }
-            }
+            _ = CommandAsync();
 
-            //foreach (var zone in ZoneList)
+            // WebServer (X) Test Setting
+            //for (int x = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfWidth); x < ZoneOption.TotalZoneHalfWidth; x++)
             //{
-            //    LoadZoneDB(zone.ZoneCoord).ConfigureAwait(false);
+            //    for (int z = (int)MathF.Ceiling(-ZoneOption.TotalZoneHalfDepth); z < ZoneOption.TotalZoneHalfDepth; z++)
+            //    {
+            //        if (!CreateEntity(EntityType.Block, out NetEntity entity, new Vector3(x, -2f, z)))
+            //        {
+            //            Console.WriteLine($"Error:: Don't Create Entity [{EntityType.Block}]");
+            //            continue;
+            //        }
+            //    }
             //}
+
+            // WebServer DB Load
+            foreach (var zone in ZoneList)
+            {
+                LoadZoneDB(zone.ZoneCoord).Wait();
+            }
         }
 
         protected override void Release()
         {
-
+            Console.WriteLine($"Zone Chunk 종료 자동 저장...");
+            foreach (var zone in ZoneList)
+            {
+                SaveZoneDB(zone.ZoneCoord).Wait();
+            }
         }
 
         protected override void Update(float dt)
@@ -332,6 +343,10 @@ namespace NetCoreMMOServer
                         }
                     }
                     break;
+
+                case RPCPacketProtocol rpcPacket:
+                    user.LinkedEntity.ReceiveRPC(rpcPacket.RPCPacket);
+                        break;
 
                 default:
                     Console.WriteLine("Error:: Not Found Packet Protocol!!");

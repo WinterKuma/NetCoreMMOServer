@@ -1,4 +1,6 @@
-﻿using NetCoreMMOServer.Packet;
+﻿using MemoryPack;
+using NetCoreMMOServer.Network;
+using NetCoreMMOServer.Packet;
 using NetCoreMMOServer.Physics;
 using System.Numerics;
 
@@ -12,9 +14,14 @@ namespace NetCoreMMOServer.Framework
         private EntityDataTable _initDataTablePacket;
         private EntityDataTable _updateDataTablePacket;
         private EntityDataTable _disposeDataTablePacket;
+        private User? _owner;
 
         protected List<ISyncData> _serverSideSyncDatas;
         protected List<ISyncData> _clientSideSyncDatas;
+
+        // Cashing Packet
+        private RPCPacketProtocol _rpcPacketProtocol;
+
 
         // Zone Data
         private SyncData<Zone?> _currentZone;
@@ -60,6 +67,8 @@ namespace NetCoreMMOServer.Framework
                 Velocity,
             };
 
+            _rpcPacketProtocol = new RPCPacketProtocol();
+
             Init(_entityInfo);
         }
 
@@ -84,11 +93,30 @@ namespace NetCoreMMOServer.Framework
         public EntityInfo EntityInfo => _entityInfo;
         public EntityType EntityType => _entityInfo.EntityType;
         public uint EntityID => _entityInfo.EntityID;
+        public User? Owner
+        {
+            get { return _owner; }
+            set { _owner = value; }
+        }
         public SyncData<Zone?> CurrentZone => _currentZone;
 
         public override void Update(float dt)
         {
 
+        }
+
+        public virtual void ReceiveRPC(in RPCPacket rpcPacket)
+        {
+
+        }
+
+        protected void SendRPCPacket(RPCPacket rpcPacket)
+        {
+            if (Owner != null)
+            {
+                _rpcPacketProtocol.RPCPacket = rpcPacket;
+                _ = Owner.SendAsync(MemoryPackSerializer.Serialize<IMPacket>(_rpcPacketProtocol));
+            }
         }
 
         public void Teleport(Vector3 position)

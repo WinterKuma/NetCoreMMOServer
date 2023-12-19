@@ -84,6 +84,16 @@ namespace NetCoreMMOServer.Framework
         public void LinkEntity(NetEntity linkedEntity)
         {
             _linkedEntity = linkedEntity;
+            _linkedEntity.Owner = this;
+        }
+
+        public void UnlinkEntity()
+        {
+            if(_linkedEntity != null)
+            {
+                _linkedEntity.Owner = null;
+                _linkedEntity = null;
+            }
         }
 
         public void ClearWriter()

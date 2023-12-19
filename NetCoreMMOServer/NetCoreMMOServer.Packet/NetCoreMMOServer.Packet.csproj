@@ -11,7 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NetCoreMMOServer.PacketGenerator\NetCoreMMOServer.PacketGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\NetCoreMMOServer.Utility\NetCoreMMOServer.Utility.csproj" />
   </ItemGroup>
 

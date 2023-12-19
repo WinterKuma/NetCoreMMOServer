@@ -34,6 +34,26 @@ namespace NetCoreMMOServer.Network
                     case 3:
                         packet = PacketPool.Get<GroundModificationPacket>();
                         break;
+                    case 4:
+                    {
+                        packet = PacketPool.Get<RPCPacketProtocol>();
+                        //if (!TryReadUnionHeader(buffer, out ushort tag2))
+                        //{
+                        //    Console.WriteLine($"Error:: Can't Read Union Header!!!");
+                        //    return false;
+                        //}
+
+                        //switch (tag2)
+                        //{
+                        //    case 1:
+                        //        packet = PacketPool.Get<RPCAttackPacket>();
+                        //        break;
+
+                        //    default:
+                        //        return false;
+                        //}
+                    }
+                        break;
 
                     default:
                         return false;
